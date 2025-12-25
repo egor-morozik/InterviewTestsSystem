@@ -6,10 +6,11 @@ class InterviewerUser(AbstractUser):
 
 class TestTemplate(models.Model):
     name = models.CharField(
-        verbose_name="Название теста"
+        max_length=255,
+        verbose_name="Название теста",
         )
     description = models.TextField(
-        verbose_name="Описание"
+        verbose_name="Описание",
         )
 
 class Question(models.Model):
@@ -17,11 +18,11 @@ class Question(models.Model):
         TestTemplate,
         on_delete=models.CASCADE,
         related_name='questions',
-        verbose_name="Шаблон теста"
+        verbose_name="Шаблон теста",
     )
     text = models.TextField(
-        verbose_name="Текст вопроса"
+        verbose_name="Текст вопроса",
         )
     correct_answer = models.TextField(
-        verbose_name="Правильный ответ (для автооценки)"
+        verbose_name="Правильный ответ (для автооценки)",
     )
