@@ -22,6 +22,8 @@ def take_test(request, unique_link):
                 question=question,
                 response=response_text,
             )
+        invitation.completed = True
+        invitation.save()    
         return render(request, 'candidate_interface/test_completed.html', {
             'candidate': invitation.candidate,
         })

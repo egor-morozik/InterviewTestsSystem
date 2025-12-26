@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
 
 from .models import TestTemplate, Question
 
@@ -6,7 +8,8 @@ from .models import TestTemplate, Question
 @admin.register(TestTemplate)
 class TestTemplateAdmin(admin.ModelAdmin):
     list_display = (
-        'name',
+        'name', 
+        'question_count',
         )
     search_fields = (
         'name', 
@@ -16,6 +19,16 @@ class TestTemplateAdmin(admin.ModelAdmin):
     def question_count(self, obj):
         return obj.questions.count()
     question_count.short_description = "Вопросов"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('results/', self.admin_site.admin_view(self.results_view), name='results'),
+        ]
+        return custom_urls + urls
+
+    def results_view(self, request):
+        return HttpResponseRedirect(reverse('admin:candidate_interface_invitation_results'))
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):

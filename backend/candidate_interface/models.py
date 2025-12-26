@@ -18,20 +18,27 @@ class Invitation(models.Model):
         on_delete=models.CASCADE,
         related_name='invitations',
         verbose_name="Кандидат",
-    )
+        )
     test_template = models.ForeignKey(
         TestTemplate,
         on_delete=models.PROTECT,
         related_name='invitations',
         verbose_name="Шаблон теста",
-    )
+        )
     unique_link = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
         verbose_name="Уникальная ссылка",
-    )
-    sent = models.BooleanField(default=False, verbose_name="Ссылка отправлена")
+        )
+    sent = models.BooleanField(
+        default=False, 
+        verbose_name="Ссылка отправлена"
+        ) 
+    completed = models.BooleanField(
+        default=False,
+        verbose_name="Пройден",
+        )
 
 class Answer(models.Model):
     invitation = models.ForeignKey(
@@ -39,19 +46,19 @@ class Answer(models.Model):
         on_delete=models.CASCADE,
         related_name='answers',
         verbose_name="Приглашение",
-    )
+        )
     question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
         verbose_name="Вопрос",
-    )
+        )
     response = models.TextField(
         verbose_name="Ответ кандидата",
         )
     score = models.IntegerField(
         default=0,
         verbose_name="Баллы (автооценка)",
-    )
+        )
     def auto_evaluate(self):
         correct = self.question.correct_answer.strip().lower()
         user_answer = self.response.strip().lower()
