@@ -1,6 +1,8 @@
 import json
+import time
 import uuid
 from django.db import models
+import requests
 from interviewer_interface.models import TestTemplate, Question
 
 class Candidate(models.Model):
@@ -90,7 +92,40 @@ class Answer(models.Model):
                 self.score = 0
 
         elif q_type == 'code':
-            self.score = 0
+            try:
+                submit_resp = requests.post(
+                    'http://localhost:2358/submissions',
+                    json={
+                        'source_code': user_response,
+                        'language_id': 71,  # Python 3
+                        'stdin': self.question.stdin or '',
+                    }
+                )
+                if submit_resp.status_code != 201:
+                    self.score = 0
+                    return
+
+                token = submit_resp.json()['token']
+
+                for _ in range(10): 
+                    time.sleep(1)
+                    result_resp = requests.get(f'http://localhost:2358/submissions/{token}')
+                    if result_resp.status_code == 200:
+                        result = result_resp.json()
+                        if result['status']['id'] in [1, 2]:  
+                            continue
+                        output = (result['stdout'] or '').strip()
+                        error = result['stderr'] or ''
+                        if error:
+                            self.score = 0
+                            break
+                        correct_output = self.question.correct_answer.strip()
+                        self.score = 10 if output == correct_output else 0
+                        break
+                else:
+                    self.score = 0  
+            except Exception:
+                self.score = 0
 
     def save(self, *args, **kwargs):
         if not self.id: 

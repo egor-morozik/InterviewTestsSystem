@@ -37,6 +37,10 @@ class Question(models.Model):
     correct_answer = models.TextField(
         verbose_name="Правильный ответ (для автооценки)",
         )  
+    stdin = models.TextField(
+        blank=True, 
+        verbose_name="Входные данные для кода",
+        )
     
 class Choice(models.Model):
     question = models.ForeignKey(
