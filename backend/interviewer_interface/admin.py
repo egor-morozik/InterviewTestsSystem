@@ -2,7 +2,12 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 
-from .models import TestTemplate, Question
+from .models import TestTemplate, Question, Choice
+
+
+class ChoiceInline(admin.TabularInline):
+    model = Choice
+    extra = 4  
 
 
 @admin.register(TestTemplate)
@@ -35,14 +40,19 @@ class QuestionAdmin(admin.ModelAdmin):
     list_display = (
         'text_truncated', 
         'template', 
+        'question_type',
         'answer_truncated',
         )
     list_filter = (
         'template',
+        'question_type',
         )
     search_fields = (
         'text',
         )
+    inlines = [
+        ChoiceInline,
+        ]
 
     def text_truncated(self, obj):
         return obj.text[:80] + "..." if len(obj.text) > 80 else obj.text

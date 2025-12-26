@@ -1,3 +1,4 @@
+import json
 import uuid
 from django.db import models
 from interviewer_interface.models import TestTemplate, Question
@@ -59,12 +60,37 @@ class Answer(models.Model):
         default=0,
         verbose_name="Баллы (автооценка)",
         )
+    
     def auto_evaluate(self):
-        correct = self.question.correct_answer.strip().lower()
-        user_answer = self.response.strip().lower()
-        
-        if correct == user_answer:
-            self.score += 1
+        if not self.question.correct_answer:
+            self.score = 0
+            return
+
+        q_type = self.question.question_type
+        user_response = self.response.strip()
+
+        if q_type == 'text':
+            correct = self.question.correct_answer.strip()
+            self.score = 10 if user_response == correct else 0
+
+        elif q_type == 'single_choice':
+            try:
+                correct_id = int(self.question.correct_answer)
+                user_id = int(user_response)
+                self.score = 10 if correct_id == user_id else 0
+            except:
+                self.score = 0
+
+        elif q_type == 'multiple_choice':
+            try:
+                correct_ids = set(json.loads(self.question.correct_answer))
+                user_ids = set(json.loads(user_response)) if user_response else set()
+                self.score = 10 if correct_ids == user_ids else 0
+            except:
+                self.score = 0
+
+        elif q_type == 'code':
+            self.score = 0
 
     def save(self, *args, **kwargs):
         if not self.id: 
