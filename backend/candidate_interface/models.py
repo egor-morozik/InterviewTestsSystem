@@ -29,6 +29,7 @@ class Invitation(models.Model):
         unique=True,
         verbose_name="Уникальная ссылка",
     )
+    sent = models.BooleanField(default=False, verbose_name="Ссылка отправлена")
 
 class Answer(models.Model):
     invitation = models.ForeignKey(

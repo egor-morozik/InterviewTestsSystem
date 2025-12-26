@@ -28,11 +28,16 @@ class InvitationAdmin(admin.ModelAdmin):
     unique_link_short.short_description = "Ссылка"
 
     def send_link(self, obj):
-        url = reverse('admin:send_invitation', args=[obj.pk])
-        return format_html('<a href="{}">Отправить</a>', url)
+            if obj.sent:
+                return "Отправлено"
+            url = reverse('admin:send_invitation', args=[obj.pk])
+            return format_html('<a href="{}">Отправить</a>', url)
     send_link.short_description = "Действие"
 
     def send_selected_invitations(self, request, queryset):
+        for invitation in queryset.filter(sent=False):
+            invitation.sent = True
+            invitation.save()
         self.message_user(request, f"Отправлено {queryset.count()} приглашений.")
     send_selected_invitations.short_description = "Отправить выбранные приглашения"
 
@@ -43,8 +48,13 @@ class InvitationAdmin(admin.ModelAdmin):
             path('<int:invitation_id>/send/', self.admin_site.admin_view(self.send_single_invitation), name='send_invitation'),
         ]
         return custom_urls + urls
-
+    
     def send_single_invitation(self, request, invitation_id):
+        invitation = Invitation.objects.get(pk=invitation_id)
+        if not invitation.sent:
+            invitation.sent = True
+            invitation.save()
+            self.message_user(request, f"Приглашение для {invitation.candidate.email} отправлено.")
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', 'admin:candidate_interface_invitation_changelist'))
 
 @admin.register(Answer)
