@@ -3,12 +3,14 @@ from django.db import models
 from interviewer_interface.models import TestTemplate, Question
 
 class Candidate(models.Model):
-    email = models.EmailField(unique=True, 
-                              verbose_name="Email кандидата",
-                              )
-    full_name = models.CharField(max_length=255, 
-                                 verbose_name="ФИО",
-                                 )
+    email = models.EmailField(
+        unique=True, 
+        verbose_name="Email кандидата",
+        )
+    full_name = models.CharField(
+        max_length=255, 
+        verbose_name="ФИО",
+        )
 
 class Invitation(models.Model):
     candidate = models.ForeignKey(
@@ -46,4 +48,18 @@ class Answer(models.Model):
     response = models.TextField(
         verbose_name="Ответ кандидата",
         )
- 
+    score = models.IntegerField(
+        default=0,
+        verbose_name="Баллы (автооценка)",
+    )
+    def auto_evaluate(self):
+        correct = self.question.correct_answer.strip().lower()
+        user_answer = self.response.strip().lower()
+        
+        if correct == user_answer:
+            self.score += 1
+
+    def save(self, *args, **kwargs):
+        if not self.id: 
+            self.auto_evaluate()
+        super().save(*args, **kwargs)
