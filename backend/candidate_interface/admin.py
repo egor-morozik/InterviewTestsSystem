@@ -8,8 +8,8 @@ from interviewer_interface.models import TestTemplate
 
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
-    list_display  = ('email', 'full_name')
-    search_fields = ('email', 'full_name')
+    list_display  = ('email', 'full_name',)
+    search_fields = ('email', 'full_name',)
 
     def invitation_count(self, obj):
         return obj.invitations.count()
@@ -17,11 +17,11 @@ class CandidateAdmin(admin.ModelAdmin):
 
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
-    list_display = ('candidate', 'test_template', 'unique_link_short', 'sent', 'created_at', 'send_link')
-    list_filter = ('test_template', 'sent', 'created_at')
-    search_fields = ('candidate__email', 'test_template__name')
-    actions = ['send_selected_invitations']
-    readonly_fields = ('unique_link', 'created_at')
+    list_display = ('candidate', 'test_template', 'unique_link_short', 'sent', 'send_link',)
+    list_filter = ('test_template', 'sent',)
+    search_fields = ('candidate__email', 'test_template__name',)
+    actions = ['send_selected_invitations',]
+    readonly_fields = ('unique_link',)
 
     def unique_link_short(self, obj):
         return str(obj.unique_link)[:8] + "..."
@@ -59,10 +59,10 @@ class InvitationAdmin(admin.ModelAdmin):
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
-    list_display = ('invitation', 'question_truncated', 'score', 'evaluated_at')
-    list_filter = ('invitation__test_template', 'score', 'invitation__candidate')
-    search_fields = ('invitation__candidate__email', 'question__text')
-    readonly_fields = ('invitation', 'question', 'response', 'score')
+    list_display = ('invitation', 'question_truncated',)
+    list_filter = ('invitation__test_template', 'invitation__candidate',)
+    search_fields = ('invitation__candidate__email', 'question__text',)
+    readonly_fields = ('invitation', 'question', 'response',)
 
     def question_truncated(self, obj):
         return obj.question.text[:60] + "..." if len(obj.question.text) > 60 else obj.question.text
