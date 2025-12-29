@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.shortcuts import render
 from django.utils.html import format_html
@@ -7,6 +8,25 @@ from .models import Candidate, Invitation, Answer
 from interviewer_interface.models import TestTemplate
 
 
+class InvitationAdminForm(forms.ModelForm):
+    send_immediately = forms.BooleanField(
+        label="Отправить приглашение сразу после сохранения",
+        required=False,
+        initial=True, 
+        help_text="Если отмечено, кандидат получит ссылку автоматически."
+    )
+    class Meta:
+        model = Invitation
+        fields = '__all__'  
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get('send_immediately'):
+            instance.sent = True
+        if commit:
+            instance.save()
+        return instance
+    
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
     list_display  = ('email', 
@@ -22,6 +42,7 @@ class CandidateAdmin(admin.ModelAdmin):
 
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
+    form = InvitationAdminForm
     list_display = (
         'candidate',
         'test_template',
@@ -32,10 +53,24 @@ class InvitationAdmin(admin.ModelAdmin):
         'view_answers',
         'resend_invitation',
     )
-    list_filter = ('test_template', 'sent', 'completed')
-    search_fields = ('candidate__email', 'test_template__name')
-    actions = ['send_selected_invitations']
-    readonly_fields = ('unique_link',)
+    list_filter = (
+        'test_template', 
+        'sent', 
+        'completed'
+        )
+    search_fields = (
+        'candidate__email', 
+        'test_template__name',
+        )
+    actions = [
+        'send_selected_invitations',
+        ]
+    exclude = ('sent', 
+               'completed',
+               )
+    readonly_fields = (
+        'unique_link',
+        )
 
     def unique_link_short(self, obj):
         return str(obj.unique_link)[:8] + "..."
@@ -70,10 +105,12 @@ class InvitationAdmin(admin.ModelAdmin):
         custom_urls = [
             path('<int:invitation_id>/send/',
                  self.admin_site.admin_view(self.send_single_invitation),
-                 name='send_invitation'),
+                 name='send_invitation'
+                 ),
             path('results/',
                  self.admin_site.admin_view(self.results_view),
-                 name='invitation_results'),
+                 name='invitation_results'
+                 ),
         ]
         return custom_urls + urls
 
