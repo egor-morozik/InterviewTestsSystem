@@ -22,7 +22,17 @@ class Question(models.Model):
         ('multiple_choice', 'Выбор нескольких вариантов'),
         ('code', 'Написать код'),
         )
-
+    QUESTION_COMPLEXITY = (
+        ('easy', 'Легко'),
+        ('medium', 'Средне'),
+        ('hard', 'Сложно'),
+        )
+    complexity = models.CharField(
+        max_length=10,
+        choices=QUESTION_COMPLEXITY,
+        default='medium',
+        verbose_name="Сложность вопроса",
+    )
     template = models.ForeignKey(
         'TestTemplate',
         on_delete=models.CASCADE,

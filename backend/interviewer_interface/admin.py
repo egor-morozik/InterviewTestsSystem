@@ -42,10 +42,12 @@ class QuestionAdmin(admin.ModelAdmin):
         'template', 
         'question_type',
         'answer_truncated',
+        'complexity',
         )
     list_filter = (
         'template',
         'question_type',
+        'complexity',
         )
     search_fields = (
         'text',
