@@ -15,6 +15,14 @@ class TestTemplate(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+class Tag(models.Model):
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Название тега"
+    )
+    def __str__(self):
+        return f"{self.name}"
 class Question(models.Model):
     QUESTION_TYPES = (
         ('text', 'Свободный текст'),
@@ -53,6 +61,12 @@ class Question(models.Model):
         blank=True, 
         verbose_name="Входные данные для кода",
         )
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name='questions',
+        verbose_name="Теги"
+    )
     
 class Choice(models.Model):
     question = models.ForeignKey(
