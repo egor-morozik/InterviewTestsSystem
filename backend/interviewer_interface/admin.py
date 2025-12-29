@@ -2,13 +2,18 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 
-from .models import Tag, TestTemplate, Question, Choice
+from .models import Tag, TestTemplate, Question, Choice, TestTemplateQuestion
 
 
 class ChoiceInline(admin.TabularInline):
     model = Choice
     extra = 4  
 
+class TestTemplateQuestionInline(admin.TabularInline):
+    model = TestTemplateQuestion
+    extra = 1
+    fields = ('question', 'order')
+    raw_id_fields = ('question',)  
 
 @admin.register(TestTemplate)
 class TestTemplateAdmin(admin.ModelAdmin):
@@ -20,6 +25,7 @@ class TestTemplateAdmin(admin.ModelAdmin):
         'name', 
         'description',
         )
+    inlines = [TestTemplateQuestionInline]
 
     def question_count(self, obj):
         return obj.questions.count()
@@ -53,17 +59,18 @@ class TagAdmin(admin.ModelAdmin):
 class QuestionAdmin(admin.ModelAdmin):
     list_display = (
         'text_truncated', 
-        'template', 
         'question_type',
         'answer_truncated',
         'tags_list',
         'complexity',
         )
-    filter_horizontal = ('tags',)
+    filter_horizontal = (
+        'tags',
+        )
     list_filter = (
-        'template',
         'question_type',
         'complexity',
+        'tags__name',
         )
     search_fields = (
         'text',

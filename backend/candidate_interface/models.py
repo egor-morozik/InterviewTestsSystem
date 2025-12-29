@@ -46,6 +46,9 @@ class Invitation(models.Model):
         verbose_name="Пройден",
         )
 
+    def __str__(self):
+        return f"Приглашение для {self.candidate.email}-{self.test_template.name}"
+
 class Answer(models.Model):
     invitation = models.ForeignKey(
         Invitation,

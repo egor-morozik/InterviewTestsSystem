@@ -12,8 +12,32 @@ class TestTemplate(models.Model):
     description = models.TextField(
         verbose_name="Описание",
         )
+    questions = models.ManyToManyField(
+        'Question',
+        through='TestTemplateQuestion', 
+        related_name='templates',
+        verbose_name="Вопросы"
+    )
     def __str__(self):
         return f"{self.name}"
+    
+class TestTemplateQuestion(models.Model):
+    template = models.ForeignKey(TestTemplate, on_delete=models.CASCADE)
+    question = models.ForeignKey('Question', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок в тесте",
+        help_text="Чем меньше — тем раньше вопрос"
+    )
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ('template', 'question')
+        verbose_name = "Вопрос в шаблоне"
+        verbose_name_plural = "Вопросы в шаблоне"
+
+    def __str__(self):
+        return f"{self.template} — {self.question} (порядок {self.order})"
 
 class Tag(models.Model):
     name = models.CharField(
@@ -41,12 +65,6 @@ class Question(models.Model):
         default='medium',
         verbose_name="Сложность вопроса",
     )
-    template = models.ForeignKey(
-        'TestTemplate',
-        on_delete=models.CASCADE,
-        related_name='questions',
-        verbose_name="Шаблон теста",
-        )
     text = models.TextField(verbose_name="Текст вопроса")
     question_type = models.CharField(
         max_length=20,
@@ -67,6 +85,9 @@ class Question(models.Model):
         related_name='questions',
         verbose_name="Теги"
     )
+    def __str__(self):
+        return f"{self.text[:50]}{'...' if len(self.text) > 50 else ''}"
+    
     
 class Choice(models.Model):
     question = models.ForeignKey(
