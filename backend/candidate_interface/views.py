@@ -7,8 +7,13 @@ from interviewer_interface.models import Question
 
 def take_test(request, unique_link, question_id=None):
     invitation = get_object_or_404(Invitation, unique_link=unique_link)
+    if invitation.completed:
+            return render(request, 'candidate_interface/test_completed.html', {
+                'candidate': invitation.candidate,
+                'message': "Вы уже завершили этот тест. Повторное прохождение невозможно.",
+            })
+    
     template = invitation.test_template
-
     template_questions = template.testtemplatequestion_set.all().order_by('order')
     questions = [tq.question for tq in template_questions]
 
