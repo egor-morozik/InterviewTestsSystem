@@ -14,7 +14,10 @@ class Candidate(models.Model):
         max_length=255, 
         verbose_name="ФИО",
         )
-
+    
+    def __str__(self):
+        return f"{self.full_name}"
+    
 class Invitation(models.Model):
     candidate = models.ForeignKey(
         Candidate,

@@ -12,6 +12,8 @@ class TestTemplate(models.Model):
     description = models.TextField(
         verbose_name="Описание",
         )
+    def __str__(self):
+        return f"{self.name}"
 
 class Question(models.Model):
     QUESTION_TYPES = (

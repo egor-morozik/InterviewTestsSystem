@@ -1,28 +1,158 @@
-{% for question in questions %}
-<div class="question">
-    <h3>Вопрос {{ forloop.counter }}: {{ question.text }}</h3>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: {{ invitation.test_template.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+        }
+        .question {
+            margin-bottom: 35px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .question:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .question h3 {
+            margin-top: 0;
+            color: #34495e;
+            font-size: 1.2em;
+        }
+        label {
+            display: block;
+            margin: 12px 0;
+            font-size: 1.05em;
+            cursor: pointer;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 12px;
+            transform: scale(1.2);
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            resize: vertical;
+        }
+        .submit-btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 40px auto;
+            padding: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .submit-btn:hover {
+            background: #2980b9;
+        }
+        .progress {
+            height: 6px;
+            background: #eee;
+            margin-bottom: 30px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #3498db;
+            transition: width 0.4s;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Тест: {{ invitation.test_template.name }}</h1>
+        <p class="subtitle">Добрый день, {{ invitation.candidate.full_name }}!</p>
 
-    {% if question.question_type == 'text' %}
-        <textarea name="question_{{ question.id }}" required></textarea>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
 
-    {% elif question.question_type == 'single_choice' %}
-        {% for choice in question.choices.all %}
-        <label>
-            <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}">
-            {{ choice.text }}
-        </label>
-        {% endfor %}
+        <form method="post" id="testForm">
+            {% csrf_token %}
 
-    {% elif question.question_type == 'multiple_choice' %}
-        {% for choice in question.choices.all %}
-        <label>
-            <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.id }}">
-            {{ choice.text }}
-        </label>
-        {% endfor %}
+            {% for question in questions %}
+            <div class="question">
+                <h3>Вопрос {{ forloop.counter }}: {{ question.text }}</h3>
 
-    {% elif question.question_type == 'code' %}
-        <textarea name="question_{{ question.id }}" rows="10" placeholder="Напишите код здесь..."></textarea>
-    {% endif %}
-</div>
-{% endfor %}
+                {% if question.question_type == 'text' %}
+                    <textarea name="question_{{ question.id }}" required placeholder="Ваш ответ..."></textarea>
+
+                {% elif question.question_type == 'single_choice' %}
+                    {% for choice in question.choices.all %}
+                    <label>
+                        <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required>
+                        {{ choice.text }}
+                    </label>
+                    {% endfor %}
+
+                {% elif question.question_type == 'multiple_choice' %}
+                    {% for choice in question.choices.all %}
+                    <label>
+                        <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.id }}">
+                        {{ choice.text }}
+                    </label>
+                    {% endfor %}
+
+                {% elif question.question_type == 'code' %}
+                    <textarea name="question_{{ question.id }}" rows="12" placeholder="Напишите код здесь..."></textarea>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="submit-btn">Отправить ответы</button>
+        </form>
+    </div>
+
+    <script>
+        window.addEventListener('scroll', function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+    </script>
+</body>
+</html>
