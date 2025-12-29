@@ -18,6 +18,11 @@ class TestTemplate(models.Model):
         related_name='templates',
         verbose_name="Вопросы"
     )
+    time_limit = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Ограничение по времени (минуты)",
+        help_text="0 — без ограничения. Например, 60 для часа."
+    )
     def __str__(self):
         return f"{self.name}"
     
@@ -29,7 +34,6 @@ class TestTemplateQuestion(models.Model):
         verbose_name="Порядок в тесте",
         help_text="Чем меньше — тем раньше вопрос"
     )
-
     class Meta:
         ordering = ['order']
         unique_together = ('template', 'question')

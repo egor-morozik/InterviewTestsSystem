@@ -25,7 +25,14 @@ class TestTemplateAdmin(admin.ModelAdmin):
         'name', 
         'description',
         )
-    inlines = [TestTemplateQuestionInline]
+    fields = (
+        'name', 
+        'description', 
+        'time_limit',
+        )
+    inlines = [
+        TestTemplateQuestionInline,
+        ]
 
     def question_count(self, obj):
         return obj.questions.count()

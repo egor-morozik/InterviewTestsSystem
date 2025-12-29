@@ -1,19 +1,41 @@
 import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
-from django.urls import reverse
+from django.utils import timezone
 from .models import Invitation, Answer
 from interviewer_interface.models import Question
 
 def take_test(request, unique_link, question_id=None):
     invitation = get_object_or_404(Invitation, unique_link=unique_link)
     if invitation.completed:
+        return render(request, 'candidate_interface/test_completed.html', {
+            'candidate': invitation.candidate,
+            'message': "Вы уже завершили этот тест. Повторное прохождение невозможно."
+        })
+
+    template = invitation.test_template
+    time_limit_seconds = template.time_limit * 60  
+
+    session_key = f'test_start_{unique_link}'
+    if time_limit_seconds > 0 and session_key not in request.session:
+        request.session[session_key] = timezone.now().timestamp()
+        request.session.modified = True
+
+    if time_limit_seconds > 0:
+        start_timestamp = request.session.get(session_key)
+        elapsed = timezone.now().timestamp() - start_timestamp
+        if elapsed >= time_limit_seconds:
+            invitation.completed = True
+            invitation.save()
             return render(request, 'candidate_interface/test_completed.html', {
                 'candidate': invitation.candidate,
-                'message': "Вы уже завершили этот тест. Повторное прохождение невозможно.",
+                'message': "Время на тест истекло. Результаты сохранены."
             })
-    
-    template = invitation.test_template
+
+        remaining_time = int(time_limit_seconds - elapsed)
+    else:
+        remaining_time = 0
+
     template_questions = template.testtemplatequestion_set.all().order_by('order')
     questions = [tq.question for tq in template_questions]
 
@@ -21,8 +43,7 @@ def take_test(request, unique_link, question_id=None):
         return HttpResponse("Нет вопросов в тесте.")
 
     if question_id is None:
-        first_question = questions[0]
-        return redirect('candidate_interface:take_test', unique_link=unique_link, question_id=first_question.id)
+        return redirect('candidate_interface:take_test', unique_link=unique_link, question_id=questions[0].id)
 
     try:
         current_index = next(i for i, q in enumerate(questions) if q.id == question_id)
@@ -67,14 +88,30 @@ def take_test(request, unique_link, question_id=None):
         'current_index': current_index + 1,
         'is_first': current_index == 0,
         'is_last': current_index == len(questions) - 1,
+        'remaining_time': remaining_time,
+        'time_limit_active': time_limit_seconds > 0,
     }
 
     return render(request, 'candidate_interface/test_page.html', context)
 
+
 def finish_test(request, unique_link):
     invitation = get_object_or_404(Invitation, unique_link=unique_link)
+
+    if invitation.completed:
+        return render(request, 'candidate_interface/test_completed.html', {
+            'candidate': invitation.candidate,
+            'message': "Тест уже завершён."
+        })
+
     invitation.completed = True
     invitation.save()
+
+    for answer in invitation.answers.all():
+        answer.auto_evaluate()
+        answer.save()
+
     return render(request, 'candidate_interface/test_completed.html', {
         'candidate': invitation.candidate,
+        'message': "Тест успешно завершён. Спасибо!"
     })

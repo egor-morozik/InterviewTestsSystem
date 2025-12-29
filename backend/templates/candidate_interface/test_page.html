@@ -21,6 +21,7 @@
         .btn-next { background: #3498db; color: white; }
         .btn-finish { background: #27ae60; color: white; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
+        #timer { text-align: center; font-size: 1.3em; color: #e74c3c; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -28,52 +29,86 @@
         <h1>Тест: {{ invitation.test_template.name }}</h1>
         <p style="text-align:center; color:#7f8c8d;">Добрый день, {{ invitation.candidate.full_name }}!</p>
 
+        {% if time_limit_active %}
+        <div id="timer">
+            Осталось: <span id="timeLeft">00:00</span>
+        </div>
+        {% endif %}
+
         <div class="progress">
             <div class="progress-bar"></div>
         </div>
 
-        <div class="question">
-            <h3>Вопрос {{ current_index }} из {{ total_questions }}: {{ current_question.text }}</h3>
+        <form method="post" id="testForm">
+            {% csrf_token %}
 
-            {% if current_question.question_type == 'text' %}
-                <textarea name="question_{{ current_question.id }}" required placeholder="Ваш ответ..."></textarea>
+            <div class="question">
+                <h3>Вопрос {{ current_index }} из {{ total_questions }}: {{ current_question.text }}</h3>
 
-            {% elif current_question.question_type == 'single_choice' %}
-                {% for choice in current_question.choices.all %}
-                <label>
-                    <input type="radio" name="question_{{ current_question.id }}" value="{{ choice.id }}">
-                    {{ choice.text }}
-                </label>
-                {% endfor %}
+                {% if current_question.question_type == 'text' %}
+                    <textarea name="question_{{ current_question.id }}" required placeholder="Ваш ответ..."></textarea>
 
-            {% elif current_question.question_type == 'multiple_choice' %}
-                {% for choice in current_question.choices.all %}
-                <label>
-                    <input type="checkbox" name="question_{{ current_question.id }}" value="{{ choice.id }}">
-                    {{ choice.text }}
-                </label>
-                {% endfor %}
+                {% elif current_question.question_type == 'single_choice' %}
+                    {% for choice in current_question.choices.all %}
+                    <label>
+                        <input type="radio" name="question_{{ current_question.id }}" value="{{ choice.id }}">
+                        {{ choice.text }}
+                    </label>
+                    {% endfor %}
 
-            {% elif current_question.question_type == 'code' %}
-                <textarea name="question_{{ current_question.id }}" rows="12" placeholder="Напишите код здесь..."></textarea>
-            {% endif %}
-        </div>
+                {% elif current_question.question_type == 'multiple_choice' %}
+                    {% for choice in current_question.choices.all %}
+                    <label>
+                        <input type="checkbox" name="question_{{ current_question.id }}" value="{{ choice.id }}">
+                        {{ choice.text }}
+                    </label>
+                    {% endfor %}
 
-        <div class="navigation">
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="prev">
-                <button type="submit" class="btn btn-prev" {% if is_first %}disabled{% endif %}>Предыдущий</button>
-            </form>
+                {% elif current_question.question_type == 'code' %}
+                    <textarea name="question_{{ current_question.id }}" rows="12" placeholder="Напишите код здесь..."></textarea>
+                {% endif %}
+            </div>
 
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="{% if is_last %}finish{% else %}next{% endif %}">
-                <button type="submit" class="btn {% if is_last %}btn-finish{% else %}btn-next{% endif %}" {% if is_last %}name="finish"{% endif %}>
-                    {% if is_last %}Закончить тест{% else %}Следующий{% endif %}
-                </button>
-            </form>
-        </div>
+            <div class="navigation">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="prev">
+                    <button type="submit" class="btn btn-prev" {% if is_first %}disabled{% endif %}>Предыдущий</button>
+                </form>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if is_last %}finish{% else %}next{% endif %}">
+                    <button type="submit" class="btn {% if is_last %}btn-finish{% else %}btn-next{% endif %}">
+                        {% if is_last %}Закончить тест{% else %}Следующий{% endif %}
+                    </button>
+                </form>
+            </div>
+        </form>
     </div>
+
+    {% if time_limit_active %}
+    <script>
+        let remaining = {{ remaining_time }};
+        const timerElement = document.getElementById('timeLeft');
+
+        function updateTimer() {
+            if (remaining <= 0) {
+                alert("Время истекло! Тест завершён.");
+                document.getElementById('testForm').submit();
+                return;
+            }
+
+            let minutes = Math.floor(remaining / 60);
+            let seconds = remaining % 60;
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            remaining--;
+            setTimeout(updateTimer, 1000);
+        }
+
+        updateTimer();
+    </script>
+    {% endif %}
 </body>
 </html>
