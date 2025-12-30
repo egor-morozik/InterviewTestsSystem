@@ -1,9 +1,12 @@
 import json
 import time
 import uuid
-from django.db import models
 import requests
+
+from django.db import models
 from interviewer_interface.models import TestTemplate, Question
+
+
 
 class Candidate(models.Model):
     email = models.EmailField(

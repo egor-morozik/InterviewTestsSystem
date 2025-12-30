@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.utils.html import format_html
 from django.urls import path, reverse
 from django.http import HttpResponseRedirect
+
 from .models import Candidate, Invitation, Answer
 from interviewer_interface.models import TestTemplate
 
@@ -15,6 +16,7 @@ class InvitationAdminForm(forms.ModelForm):
         initial=True, 
         help_text="Если отмечено, кандидат получит ссылку автоматически."
     )
+
     class Meta:
         model = Invitation
         fields = '__all__'  
@@ -29,16 +31,14 @@ class InvitationAdminForm(forms.ModelForm):
     
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
-    list_display  = ('email', 
-                     'full_name',
-                     )
-    search_fields = ('email', 
-                     'full_name',
-                     )
-
-    def invitation_count(self, obj):
-        return obj.invitations.count()
-    invitation_count.short_description = "Приглашений"
+    list_display  = (
+        'email', 
+        'full_name',
+        )
+    search_fields = (
+        'email', 
+        'full_name',
+        )
 
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
@@ -52,7 +52,7 @@ class InvitationAdmin(admin.ModelAdmin):
         'total_score',
         'view_answers',
         'resend_invitation',
-    )
+        )
     list_filter = (
         'test_template', 
         'sent', 
@@ -65,9 +65,10 @@ class InvitationAdmin(admin.ModelAdmin):
     actions = [
         'send_selected_invitations',
         ]
-    exclude = ('sent', 
-               'completed',
-               )
+    exclude = (
+        'sent', 
+        'completed',
+        )
     readonly_fields = (
         'unique_link',
         )
@@ -103,22 +104,27 @@ class InvitationAdmin(admin.ModelAdmin):
         from django.urls import path
         urls = super().get_urls()
         custom_urls = [
-            path('<int:invitation_id>/send/',
+            path(
+                '<int:invitation_id>/send/',
                  self.admin_site.admin_view(self.send_single_invitation),
                  name='send_invitation'
-                 ),
-            path('results/',
-                 self.admin_site.admin_view(self.results_view),
-                 name='invitation_results'
-                 ),
-        ]
+                ),
+            path(
+                'results/',
+                self.admin_site.admin_view(self.results_view),
+                name='invitation_results'
+                ),
+            ]
         return custom_urls + urls
 
     def send_single_invitation(self, request, invitation_id):
         invitation = Invitation.objects.get(pk=invitation_id)
         invitation.sent = True
         invitation.save()
-        self.message_user(request, f"Приглашение для {invitation.candidate.email} отправлено/переотправлено.")
+        self.message_user(
+            request, 
+            f"Приглашение для {invitation.candidate.email} отправлено/переотправлено."
+            )
         return HttpResponseRedirect(
             request.META.get('HTTP_REFERER', 'admin:candidate_interface_invitation_changelist')
         )

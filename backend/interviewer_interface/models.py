@@ -35,8 +35,13 @@ class TestTemplateQuestion(models.Model):
         help_text="Чем меньше — тем раньше вопрос"
     )
     class Meta:
-        ordering = ['order']
-        unique_together = ('template', 'question')
+        ordering = [
+            'order',
+            ]
+        unique_together = (
+            'template', 
+            'question',
+            )
         verbose_name = "Вопрос в шаблоне"
         verbose_name_plural = "Вопросы в шаблоне"
 

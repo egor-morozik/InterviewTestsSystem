@@ -12,8 +12,13 @@ class ChoiceInline(admin.TabularInline):
 class TestTemplateQuestionInline(admin.TabularInline):
     model = TestTemplateQuestion
     extra = 1
-    fields = ('question', 'order')
-    raw_id_fields = ('question',)  
+    fields = (
+        'question', 
+        'order'
+        )
+    raw_id_fields = (
+        'question',
+        )  
 
 @admin.register(TestTemplate)
 class TestTemplateAdmin(admin.ModelAdmin):
@@ -41,12 +46,17 @@ class TestTemplateAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('results/', self.admin_site.admin_view(self.results_view), name='results'),
+            path(
+                'results/', self.admin_site.admin_view(self.results_view), 
+                name='results'
+                ),
         ]
         return custom_urls + urls
 
     def results_view(self, request):
-        return HttpResponseRedirect(reverse('admin:candidate_interface_invitation_results'))
+        return HttpResponseRedirect(
+            reverse('admin:candidate_interface_invitation_results')
+            )
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
