@@ -50,6 +50,7 @@ class InvitationAdmin(admin.ModelAdmin):
         'sent',
         'completed',
         'total_score',
+        'total_switches',
         'view_answers',
         'resend_invitation',
         )
@@ -138,6 +139,10 @@ class InvitationAdmin(admin.ModelAdmin):
             'site_title': 'Результаты',
         }
         return render(request, 'admin/candidate_interface/results.html', context)
+    
+    def total_switches(self, obj):
+        return sum(answer.switches for answer in obj.answers.all())
+    total_switches.short_description = "Уходы с вкладки (всего)"
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):

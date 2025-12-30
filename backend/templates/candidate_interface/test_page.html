@@ -7,27 +7,29 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
         .container { max-width: 900px; margin: 40px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 10px; }
+        .greeting { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
         .progress { height: 8px; background: #eee; border-radius: 4px; margin: 20px 0; overflow: hidden; }
-        .progress-bar { height: 100%; width: {{ current_index|floatformat:0 }}/ {{ total_questions }}%; background: #3498db; transition: width 0.4s; }
+        .progress-bar { height: 100%; background: #3498db; transition: width 0.4s; width: 0%; }
         .question { margin: 30px 0; padding: 25px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; }
-        .question h3 { margin-top: 0; color: #34495e; }
+        .question h3 { margin-top: 0; color: #34495e; font-size: 1.2em; }
         label { display: block; margin: 15px 0; font-size: 1.05em; cursor: pointer; }
         input[type="radio"], input[type="checkbox"] { margin-right: 12px; transform: scale(1.2); }
-        textarea { width: 100%; min-height: 180px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace; font-size: 1em; }
+        textarea { width: 100%; min-height: 180px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 1em; resize: vertical; }
         .navigation { display: flex; justify-content: space-between; margin-top: 40px; }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
-        .btn-prev { background: #7f8c8d; color: white; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; transition: background 0.3s; }
+        .btn-prev { background: #95a5a6; color: white; }
         .btn-next { background: #3498db; color: white; }
         .btn-finish { background: #27ae60; color: white; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-        #timer { text-align: center; font-size: 1.3em; color: #e74c3c; margin-bottom: 20px; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        #timer { text-align: center; font-size: 1.4em; color: #e74c3c; margin: 20px 0; font-weight: bold; }
+        .return-message { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #27ae60; color: white; padding: 12px 30px; border-radius: 8px; z-index: 1000; font-size: 1.1em; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Тест: {{ invitation.test_template.name }}</h1>
-        <p style="text-align:center; color:#7f8c8d;">Добрый день, {{ invitation.candidate.full_name }}!</p>
+        <p class="greeting">Добрый день, {{ invitation.candidate.full_name }}!</p>
 
         {% if time_limit_active %}
         <div id="timer">
@@ -36,7 +38,7 @@
         {% endif %}
 
         <div class="progress">
-            <div class="progress-bar"></div>
+            <div class="progress-bar" id="progressBar"></div>
         </div>
 
         <form method="post" id="testForm">
@@ -46,12 +48,12 @@
                 <h3>Вопрос {{ current_index }} из {{ total_questions }}: {{ current_question.text }}</h3>
 
                 {% if current_question.question_type == 'text' %}
-                    <textarea name="question_{{ current_question.id }}" required placeholder="Ваш ответ..."></textarea>
+                    <textarea name="question_{{ current_question.id }}" placeholder="Ваш ответ..." required></textarea>
 
                 {% elif current_question.question_type == 'single_choice' %}
                     {% for choice in current_question.choices.all %}
                     <label>
-                        <input type="radio" name="question_{{ current_question.id }}" value="{{ choice.id }}">
+                        <input type="radio" name="question_{{ current_question.id }}" value="{{ choice.id }}" required>
                         {{ choice.text }}
                     </label>
                     {% endfor %}
@@ -65,27 +67,30 @@
                     {% endfor %}
 
                 {% elif current_question.question_type == 'code' %}
-                    <textarea name="question_{{ current_question.id }}" rows="12" placeholder="Напишите код здесь..."></textarea>
+                    <textarea name="question_{{ current_question.id }}" rows="14" placeholder="Напишите код здесь..."></textarea>
                 {% endif %}
             </div>
 
             <div class="navigation">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="prev">
-                    <button type="submit" class="btn btn-prev" {% if is_first %}disabled{% endif %}>Предыдущий</button>
-                </form>
+                <button type="submit" name="action" value="prev" class="btn btn-prev" {% if is_first %}disabled{% endif %}>
+                    ← Предыдущий
+                </button>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="{% if is_last %}finish{% else %}next{% endif %}">
-                    <button type="submit" class="btn {% if is_last %}btn-finish{% else %}btn-next{% endif %}">
-                        {% if is_last %}Закончить тест{% else %}Следующий{% endif %}
-                    </button>
-                </form>
+                <button type="submit" name="action" value="{% if is_last %}finish{% else %}next{% endif %}" 
+                        class="btn {% if is_last %}btn-finish{% else %}btn-next{% endif %}">
+                    {% if is_last %}Закончить тест{% else %}Следующий →{% endif %}
+                </button>
             </div>
         </form>
     </div>
+
+    <!-- Прогресс-бар по скроллу -->
+    <script>
+        const progressBar = document.getElementById('progressBar');
+        const totalQuestions = {{ total_questions }};
+        const currentIndex = {{ current_index }};
+        progressBar.style.width = `${(currentIndex / totalQuestions) * 100}%`;
+    </script>
 
     {% if time_limit_active %}
     <script>
@@ -94,14 +99,14 @@
 
         function updateTimer() {
             if (remaining <= 0) {
-                alert("Время истекло! Тест завершён.");
+                alert("Время истекло! Тест завершён автоматически.");
                 document.getElementById('testForm').submit();
                 return;
             }
 
-            let minutes = Math.floor(remaining / 60);
-            let seconds = remaining % 60;
-            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const seconds = (remaining % 60).toString().padStart(2, '0');
+            timerElement.textContent = `${minutes}:${seconds}`;
 
             remaining--;
             setTimeout(updateTimer, 1000);
@@ -110,5 +115,60 @@
         updateTimer();
     </script>
     {% endif %}
+    <script>
+        const uniqueLink = "{{ invitation.unique_link }}";
+        const storageKey = 'switches_' + uniqueLink;
+        let switchCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
+        let messageShown = false;
+        let lastReturnTime = 0;
+        const MIN_INTERVAL = 5000;  // 5 секунд задержка
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const now = Date.now();
+                if (now - lastReturnTime > MIN_INTERVAL) {
+                    switchCount++;
+                    localStorage.setItem(storageKey, switchCount);
+                    lastReturnTime = now;
+
+                    console.log('Реальный переход → switches:', switchCount);
+
+                    if (!messageShown) {
+                        const msg = document.createElement('div');
+                        msg.textContent = 'Вы вернулись к тесту. Удачи!';
+                        msg.style.position = 'fixed';
+                        msg.style.top = '20px';
+                        msg.style.left = '50%';
+                        msg.style.transform = 'translateX(-50%)';
+                        msg.style.background = '#27ae60';
+                        msg.style.color = 'white';
+                        msg.style.padding = '12px 30px';
+                        msg.style.borderRadius = '8px';
+                        msg.style.zIndex = '1000';
+                        msg.style.fontSize = '1.1em';
+                        msg.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                        document.body.appendChild(msg);
+
+                        setTimeout(() => msg.remove(), 4000);
+                        messageShown = true;
+                    }
+                }
+            }
+        });
+
+        const form = document.getElementById('testForm');
+        form.addEventListener('submit', function () {
+            const old = form.querySelector('input[name="switches"]');
+            if (old) old.remove();
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'switches';
+            input.value = switchCount;
+            form.appendChild(input);
+        });
+
+        console.log('Загружено, switches:', switchCount);
+    </script>
 </body>
 </html>

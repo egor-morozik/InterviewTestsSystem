@@ -71,7 +71,11 @@ class Answer(models.Model):
         default=0,
         verbose_name="Баллы (автооценка)",
         )
-    
+    switches = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Количество уходов с вкладки",
+    )
+
     def auto_evaluate(self):
         if not self.question.correct_answer:
             self.score = 0
