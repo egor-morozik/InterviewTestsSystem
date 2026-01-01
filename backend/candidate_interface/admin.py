@@ -50,7 +50,8 @@ class InvitationAdmin(admin.ModelAdmin):
         'sent',
         'completed',
         'total_score',
-        'total_switches',
+        'tab_switches_hidden_count',
+        'tab_switches_visible_count',
         'view_answers',
         'resend_invitation',
         )
@@ -139,10 +140,12 @@ class InvitationAdmin(admin.ModelAdmin):
             'site_title': 'Результаты',
         }
         return render(request, 'admin/candidate_interface/results.html', context)
-    
-    def total_switches(self, obj):
-        return sum(answer.switches for answer in obj.answers.all())
-    total_switches.short_description = "Уходы с вкладки (всего)"
+    def tab_switches_hidden_count(self, obj):
+        return obj.tab_switches.filter(event_type='hidden').count()
+    def tab_switches_visible_count(self, obj):
+        return obj.tab_switches.filter(event_type='visible').count()
+    tab_switches_hidden_count.short_description = "Уходов с вкладки"
+    tab_switches_visible_count.short_description = "Возвратов на вкладку"
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):

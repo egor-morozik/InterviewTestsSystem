@@ -48,10 +48,33 @@ class Invitation(models.Model):
         default=False,
         verbose_name="Пройден",
         )
-
     def __str__(self):
         return f"Приглашение для {self.candidate.email}-{self.test_template.name}"
 
+class TabSwitchLog(models.Model):
+    invitation = models.ForeignKey(
+        Invitation,
+        on_delete=models.CASCADE,
+        related_name='tab_switches',
+        verbose_name="Приглашение"
+    )
+    event_type = models.CharField(
+        max_length=10,
+        choices=(('hidden', 'Ушёл'), ('visible', 'Вернулся')),
+        verbose_name="Тип события"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Время события"
+    )
+
+    class Meta:
+        ordering = ['timestamp']
+        verbose_name = "Лог ухода/возврата"
+
+    def __str__(self):
+        return f"{self.invitation} — {self.get_event_type_display()} ({self.timestamp})"
+    
 class Answer(models.Model):
     invitation = models.ForeignKey(
         Invitation,
@@ -71,10 +94,6 @@ class Answer(models.Model):
         default=0,
         verbose_name="Баллы (автооценка)",
         )
-    switches = models.PositiveIntegerField(
-        default=0,
-        verbose_name="Количество уходов с вкладки",
-    )
 
     def auto_evaluate(self):
         if not self.question.correct_answer:

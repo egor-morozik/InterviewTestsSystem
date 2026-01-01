@@ -116,59 +116,22 @@
     </script>
     {% endif %}
     <script>
-        const uniqueLink = "{{ invitation.unique_link }}";
-        const storageKey = 'switches_' + uniqueLink;
-        let switchCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
-        let messageShown = false;
-        let lastReturnTime = 0;
-        const MIN_INTERVAL = 5000;  // 5 секунд задержка
+        const logUrl = "{% url 'candidate_interface:log_tab_switch' unique_link=invitation.unique_link %}";
 
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                const now = Date.now();
-                if (now - lastReturnTime > MIN_INTERVAL) {
-                    switchCount++;
-                    localStorage.setItem(storageKey, switchCount);
-                    lastReturnTime = now;
+            const state = document.visibilityState === 'hidden' ? 'hidden' : 'visible';
 
-                    console.log('Реальный переход → switches:', switchCount);
+            console.log(`Tab is now ${state}`);
 
-                    if (!messageShown) {
-                        const msg = document.createElement('div');
-                        msg.textContent = 'Вы вернулись к тесту. Удачи!';
-                        msg.style.position = 'fixed';
-                        msg.style.top = '20px';
-                        msg.style.left = '50%';
-                        msg.style.transform = 'translateX(-50%)';
-                        msg.style.background = '#27ae60';
-                        msg.style.color = 'white';
-                        msg.style.padding = '12px 30px';
-                        msg.style.borderRadius = '8px';
-                        msg.style.zIndex = '1000';
-                        msg.style.fontSize = '1.1em';
-                        msg.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-                        document.body.appendChild(msg);
-
-                        setTimeout(() => msg.remove(), 4000);
-                        messageShown = true;
-                    }
-                }
-            }
+            fetch(logUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({state: state})
+            }).catch(() => {});  
         });
-
-        const form = document.getElementById('testForm');
-        form.addEventListener('submit', function () {
-            const old = form.querySelector('input[name="switches"]');
-            if (old) old.remove();
-
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'switches';
-            input.value = switchCount;
-            form.appendChild(input);
-        });
-
-        console.log('Загружено, switches:', switchCount);
     </script>
 </body>
 </html>

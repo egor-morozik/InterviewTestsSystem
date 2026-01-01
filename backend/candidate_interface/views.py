@@ -2,15 +2,38 @@ import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Invitation, Answer
+from .models import Invitation, Answer, TabSwitchLog
 from interviewer_interface.models import Question
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+
+@csrf_exempt  
+def log_tab_switch(request, unique_link):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'}, status=400)
+
+    invitation = get_object_or_404(Invitation, unique_link=unique_link)
+
+    data = json.loads(request.body)
+    event_type = data.get('state')
+
+    if event_type in ['hidden', 'visible']:
+        TabSwitchLog.objects.create(
+            invitation=invitation,
+            event_type=event_type
+        )
+        count = invitation.tab_switches.count()
+        return JsonResponse({'status': 'ok', 'count': count})
+
+    return JsonResponse({'status': 'error'}, status=400)
 
 def take_test(request, unique_link, question_id=None):
     invitation = get_object_or_404(Invitation, unique_link=unique_link)
     if invitation.completed:
         return render(request, 'candidate_interface/test_completed.html', {
             'candidate': invitation.candidate,
-            'message': "Вы уже завершили этот тест. Повторное прохождение невозможно."
+            'message': "Вы уже завершили этот тест. Повторное прохождение невозможно"
         })
 
     template = invitation.test_template
@@ -33,7 +56,7 @@ def take_test(request, unique_link, question_id=None):
             invitation.save()
             return render(request, 'candidate_interface/test_completed.html', {
                 'candidate': invitation.candidate,
-                'message': "Время на тест истекло. Результаты сохранены."
+                'message': "Время на тест истекло. Результаты сохранены"
             })
 
         remaining_time = int(time_limit_seconds - elapsed)
@@ -42,7 +65,7 @@ def take_test(request, unique_link, question_id=None):
     questions = [tq.question for tq in template_questions]
 
     if not questions:
-        return HttpResponse("Нет вопросов в тесте.")
+        return HttpResponse("Нет вопросов в тесте")
 
     if question_id is None:
         return redirect('candidate_interface:take_test', unique_link=unique_link, question_id=questions[0].id)
@@ -51,7 +74,7 @@ def take_test(request, unique_link, question_id=None):
         current_index = next(i for i, q in enumerate(questions) if q.id == question_id)
         current_question = questions[current_index]
     except StopIteration:
-        return HttpResponse("Вопрос не найден в этом тесте.", status=404)
+        return HttpResponse("Вопрос не найден в этом тесте", status=404)
 
     if request.method == 'POST':
         response_key = f'question_{current_question.id}'
