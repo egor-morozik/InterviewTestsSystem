@@ -6,18 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('interviewer_interface', '0009_remove_testtemplatequestion_time_limit_and_more'),
+        (
+            "interviewer_interface",
+            "0009_remove_testtemplatequestion_time_limit_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='intervieweruser',
-            name='is_hr',
-            field=models.BooleanField(default=False, verbose_name='HR'),
+            model_name="intervieweruser",
+            name="is_hr",
+            field=models.BooleanField(default=False, verbose_name="HR"),
         ),
         migrations.AddField(
-            model_name='intervieweruser',
-            name='is_tech_lead',
-            field=models.BooleanField(default=False, verbose_name='Tech Lead'),
+            model_name="intervieweruser",
+            name="is_tech_lead",
+            field=models.BooleanField(default=False, verbose_name="Tech Lead"),
         ),
     ]

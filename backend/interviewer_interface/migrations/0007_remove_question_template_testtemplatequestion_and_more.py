@@ -7,32 +7,64 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('interviewer_interface', '0006_tag_question_tags'),
+        ("interviewer_interface", "0006_tag_question_tags"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='question',
-            name='template',
+            model_name="question",
+            name="template",
         ),
         migrations.CreateModel(
-            name='TestTemplateQuestion',
+            name="TestTemplateQuestion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('order', models.PositiveIntegerField(default=0, help_text='Чем меньше — тем раньше вопрос', verbose_name='Порядок в тесте')),
-                ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='interviewer_interface.question')),
-                ('template', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='interviewer_interface.testtemplate')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        default=0,
+                        help_text="Чем меньше — тем раньше вопрос",
+                        verbose_name="Порядок в тесте",
+                    ),
+                ),
+                (
+                    "question",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="interviewer_interface.question",
+                    ),
+                ),
+                (
+                    "template",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="interviewer_interface.testtemplate",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Вопрос в шаблоне',
-                'verbose_name_plural': 'Вопросы в шаблоне',
-                'ordering': ['order'],
-                'unique_together': {('template', 'question')},
+                "verbose_name": "Вопрос в шаблоне",
+                "verbose_name_plural": "Вопросы в шаблоне",
+                "ordering": ["order"],
+                "unique_together": {("template", "question")},
             },
         ),
         migrations.AddField(
-            model_name='testtemplate',
-            name='questions',
-            field=models.ManyToManyField(related_name='templates', through='interviewer_interface.TestTemplateQuestion', to='interviewer_interface.question', verbose_name='Вопросы'),
+            model_name="testtemplate",
+            name="questions",
+            field=models.ManyToManyField(
+                related_name="templates",
+                through="interviewer_interface.TestTemplateQuestion",
+                to="interviewer_interface.question",
+                verbose_name="Вопросы",
+            ),
         ),
     ]

@@ -6,12 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('candidate_interface', '0010_alter_invitation_options'),
+        ("candidate_interface", "0010_alter_invitation_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='invitation',
-            options={'permissions': [('can_assign_interview', 'can assign hr/tech interview')]},
+            name="invitation",
+            options={
+                "permissions": [
+                    ("can_assign_interview", "can assign hr/tech interview")
+                ]
+            },
         ),
     ]

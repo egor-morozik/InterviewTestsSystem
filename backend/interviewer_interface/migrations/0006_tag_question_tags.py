@@ -6,20 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('interviewer_interface', '0005_question_complexity'),
+        ("interviewer_interface", "0005_question_complexity"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True, verbose_name='Название тега')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        max_length=100, unique=True, verbose_name="Название тега"
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='question',
-            name='tags',
-            field=models.ManyToManyField(blank=True, related_name='questions', to='interviewer_interface.tag', verbose_name='Теги'),
+            model_name="question",
+            name="tags",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="questions",
+                to="interviewer_interface.tag",
+                verbose_name="Теги",
+            ),
         ),
     ]

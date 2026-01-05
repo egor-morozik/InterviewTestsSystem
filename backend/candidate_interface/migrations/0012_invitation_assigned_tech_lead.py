@@ -8,14 +8,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('candidate_interface', '0011_alter_invitation_options'),
+        ("candidate_interface", "0011_alter_invitation_options"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='invitation',
-            name='assigned_tech_lead',
-            field=models.ForeignKey(blank=True, limit_choices_to={'is_tech_lead': True}, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='Назначенный Tech Lead'),
+            model_name="invitation",
+            name="assigned_tech_lead",
+            field=models.ForeignKey(
+                blank=True,
+                limit_choices_to={"is_tech_lead": True},
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Назначенный Tech Lead",
+            ),
         ),
     ]

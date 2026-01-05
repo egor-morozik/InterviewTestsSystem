@@ -7,29 +7,60 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('candidate_interface', '0006_remove_answer_switches_invitation_last_switch_at_and_more'),
+        (
+            "candidate_interface",
+            "0006_remove_answer_switches_invitation_last_switch_at_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='invitation',
-            name='last_switch_at',
+            model_name="invitation",
+            name="last_switch_at",
         ),
         migrations.RemoveField(
-            model_name='invitation',
-            name='switch_count',
+            model_name="invitation",
+            name="switch_count",
         ),
         migrations.CreateModel(
-            name='TabSwitchLog',
+            name="TabSwitchLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('event_type', models.CharField(choices=[('hidden', 'Ушёл'), ('visible', 'Вернулся')], max_length=10, verbose_name='Тип события')),
-                ('timestamp', models.DateTimeField(auto_now_add=True, verbose_name='Время события')),
-                ('invitation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tab_switches', to='candidate_interface.invitation', verbose_name='Приглашение')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "event_type",
+                    models.CharField(
+                        choices=[("hidden", "Ушёл"), ("visible", "Вернулся")],
+                        max_length=10,
+                        verbose_name="Тип события",
+                    ),
+                ),
+                (
+                    "timestamp",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Время события"
+                    ),
+                ),
+                (
+                    "invitation",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tab_switches",
+                        to="candidate_interface.invitation",
+                        verbose_name="Приглашение",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Лог ухода/возврата',
-                'ordering': ['timestamp'],
+                "verbose_name": "Лог ухода/возврата",
+                "ordering": ["timestamp"],
             },
         ),
     ]

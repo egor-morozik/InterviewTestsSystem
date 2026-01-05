@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('interviewer_interface', '0004_question_stdin'),
+        ("interviewer_interface", "0004_question_stdin"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='question',
-            name='complexity',
-            field=models.CharField(choices=[('easy', 'Легко'), ('medium', 'Средне'), ('hard', 'Сложно')], default='medium', max_length=10, verbose_name='Сложность вопроса'),
+            model_name="question",
+            name="complexity",
+            field=models.CharField(
+                choices=[("easy", "Легко"), ("medium", "Средне"), ("hard", "Сложно")],
+                default="medium",
+                max_length=10,
+                verbose_name="Сложность вопроса",
+            ),
         ),
     ]

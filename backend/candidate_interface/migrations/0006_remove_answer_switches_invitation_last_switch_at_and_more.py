@@ -6,22 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('candidate_interface', '0005_rename_tab_switches_answer_switches'),
+        ("candidate_interface", "0005_rename_tab_switches_answer_switches"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='answer',
-            name='switches',
+            model_name="answer",
+            name="switches",
         ),
         migrations.AddField(
-            model_name='invitation',
-            name='last_switch_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Последний уход/возврат'),
+            model_name="invitation",
+            name="last_switch_at",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Последний уход/возврат"
+            ),
         ),
         migrations.AddField(
-            model_name='invitation',
-            name='switch_count',
-            field=models.PositiveIntegerField(default=0, verbose_name='Количество уходов с вкладки'),
+            model_name="invitation",
+            name="switch_count",
+            field=models.PositiveIntegerField(
+                default=0, verbose_name="Количество уходов с вкладки"
+            ),
         ),
     ]

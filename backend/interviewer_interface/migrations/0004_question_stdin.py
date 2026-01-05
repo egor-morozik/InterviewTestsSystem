@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('interviewer_interface', '0003_question_question_type_choice'),
+        ("interviewer_interface", "0003_question_question_type_choice"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='question',
-            name='stdin',
-            field=models.TextField(blank=True, verbose_name='Входные данные для кода'),
+            model_name="question",
+            name="stdin",
+            field=models.TextField(blank=True, verbose_name="Входные данные для кода"),
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('candidate_interface', '0002_answer_score'),
+        ("candidate_interface", "0002_answer_score"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='invitation',
-            name='completed',
-            field=models.BooleanField(default=False, verbose_name='Пройден'),
+            model_name="invitation",
+            name="completed",
+            field=models.BooleanField(default=False, verbose_name="Пройден"),
         ),
     ]

@@ -6,17 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('interviewer_interface', '0008_testtemplatequestion_time_limit'),
+        ("interviewer_interface", "0008_testtemplatequestion_time_limit"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='testtemplatequestion',
-            name='time_limit',
+            model_name="testtemplatequestion",
+            name="time_limit",
         ),
         migrations.AddField(
-            model_name='testtemplate',
-            name='time_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 — без ограничения. Например, 60 для часа.', verbose_name='Ограничение по времени (минуты)'),
+            model_name="testtemplate",
+            name="time_limit",
+            field=models.PositiveIntegerField(
+                default=0,
+                help_text="0 — без ограничения. Например, 60 для часа.",
+                verbose_name="Ограничение по времени (минуты)",
+            ),
         ),
     ]

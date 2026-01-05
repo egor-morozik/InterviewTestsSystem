@@ -1,135 +1,143 @@
 import json
 import time
 import uuid
+
 import requests
-
 from django.db import models
-from interviewer_interface.models import TestTemplate, Question
 
+from interviewer_interface.models import Question, TestTemplate
 
 
 class Candidate(models.Model):
     email = models.EmailField(
-        unique=True, 
+        unique=True,
         verbose_name="Email кандидата",
-        )
+    )
     full_name = models.CharField(
-        max_length=255, 
+        max_length=255,
         verbose_name="ФИО",
-        )
-    
+    )
+
     def __str__(self):
         return f"{self.full_name}"
-    
+
+
 class Invitation(models.Model):
     candidate = models.ForeignKey(
         Candidate,
         on_delete=models.CASCADE,
-        related_name='invitations',
+        related_name="invitations",
         verbose_name="Кандидат",
-        )
+    )
     test_template = models.ForeignKey(
         TestTemplate,
         on_delete=models.PROTECT,
-        related_name='invitations',
+        related_name="invitations",
         verbose_name="Шаблон теста",
-        )
+    )
     unique_link = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
         verbose_name="Уникальная ссылка",
-        )
-    sent = models.BooleanField(
-        default=False, 
-        verbose_name="Ссылка отправлена"
-        ) 
+    )
+    sent = models.BooleanField(default=False, verbose_name="Ссылка отправлена")
     completed = models.BooleanField(
         default=False,
         verbose_name="Пройден",
-        )
+    )
     INTERVIEW_TYPES = (
-        ('general', 'Общий тест (HR)'),
-        ('technical', 'Техническое собеседование (Tech Lead)'),
-        )
+        ("general", "Общий тест (HR)"),
+        ("technical", "Техническое собеседование (Tech Lead)"),
+    )
     interview_type = models.CharField(
         max_length=20,
         choices=INTERVIEW_TYPES,
-        default='general',
-        verbose_name="Тип собеседования"
-        )
+        default="general",
+        verbose_name="Тип собеседования",
+    )
     assigned_tech_lead = models.ForeignKey(
-        'interviewer_interface.InterviewerUser',
+        "interviewer_interface.InterviewerUser",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        limit_choices_to={'is_tech_lead': True},
-        verbose_name="Назначенный Tech Lead"
-        )
-    tech_comments = models.TextField(blank=True, verbose_name="Итоговый комментарий Tech Lead")
-    tech_total_score = models.IntegerField(null=True, blank=True, verbose_name="Итоговый балл от Tech Lead")
+        limit_choices_to={"is_tech_lead": True},
+        verbose_name="Назначенный Tech Lead",
+    )
+    tech_comments = models.TextField(
+        blank=True, verbose_name="Итоговый комментарий Tech Lead"
+    )
+    tech_total_score = models.IntegerField(
+        null=True, blank=True, verbose_name="Итоговый балл от Tech Lead"
+    )
+
     def __str__(self):
         return f"Приглашение для {self.candidate.email}-{self.test_template.name}"
+
     class Meta:
         permissions = [
             (
-                "can_assign_interview", 
+                "can_assign_interview",
                 "can assign hr/tech interview",
             ),
         ]
 
+
 class QuestionFeedback(models.Model):
-    invitation = models.ForeignKey(Invitation, on_delete=models.CASCADE, related_name='feedbacks')
-    question = models.ForeignKey('interviewer_interface.Question', on_delete=models.CASCADE)
+    invitation = models.ForeignKey(
+        Invitation, on_delete=models.CASCADE, related_name="feedbacks"
+    )
+    question = models.ForeignKey(
+        "interviewer_interface.Question", on_delete=models.CASCADE
+    )
     comment = models.TextField(blank=True, verbose_name="Комментарий по вопросу")
     score = models.IntegerField(null=True, blank=True, verbose_name="Баллы за вопрос")
 
     class Meta:
-        unique_together = ('invitation', 'question')
+        unique_together = ("invitation", "question")
+
 
 class TabSwitchLog(models.Model):
     invitation = models.ForeignKey(
         Invitation,
         on_delete=models.CASCADE,
-        related_name='tab_switches',
-        verbose_name="Приглашение"
+        related_name="tab_switches",
+        verbose_name="Приглашение",
     )
     event_type = models.CharField(
         max_length=10,
-        choices=(('hidden', 'Ушёл'), ('visible', 'Вернулся')),
-        verbose_name="Тип события"
+        choices=(("hidden", "Ушёл"), ("visible", "Вернулся")),
+        verbose_name="Тип события",
     )
-    timestamp = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Время события"
-    )
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Время события")
 
     class Meta:
-        ordering = ['timestamp']
+        ordering = ["timestamp"]
         verbose_name = "Лог ухода/возврата"
 
     def __str__(self):
         return f"{self.invitation} — {self.get_event_type_display()} ({self.timestamp})"
-    
+
+
 class Answer(models.Model):
     invitation = models.ForeignKey(
         Invitation,
         on_delete=models.CASCADE,
-        related_name='answers',
+        related_name="answers",
         verbose_name="Приглашение",
-        )
+    )
     question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
         verbose_name="Вопрос",
-        )
+    )
     response = models.TextField(
         verbose_name="Ответ кандидата",
-        )
+    )
     score = models.IntegerField(
         default=0,
         verbose_name="Баллы (автооценка)",
-        )
+    )
 
     def auto_evaluate(self):
         if not self.question.correct_answer:
@@ -139,11 +147,11 @@ class Answer(models.Model):
         q_type = self.question.question_type
         user_response = self.response.strip()
 
-        if q_type == 'text':
+        if q_type == "text":
             correct = self.question.correct_answer.strip()
             self.score = 10 if user_response == correct else 0
 
-        elif q_type == 'single_choice':
+        elif q_type == "single_choice":
             try:
                 correct_id = int(self.question.correct_answer)
                 user_id = int(user_response)
@@ -151,7 +159,7 @@ class Answer(models.Model):
             except:
                 self.score = 0
 
-        elif q_type == 'multiple_choice':
+        elif q_type == "multiple_choice":
             try:
                 correct_ids = set(json.loads(self.question.correct_answer))
                 user_ids = set(json.loads(user_response)) if user_response else set()
@@ -159,31 +167,33 @@ class Answer(models.Model):
             except:
                 self.score = 0
 
-        elif q_type == 'code':
+        elif q_type == "code":
             try:
                 submit_resp = requests.post(
-                    'http://localhost:2358/submissions',
+                    "http://localhost:2358/submissions",
                     json={
-                        'source_code': user_response,
-                        'language_id': 71,  # Python 3
-                        'stdin': self.question.stdin or '',
-                    }
+                        "source_code": user_response,
+                        "language_id": 71,  # Python 3
+                        "stdin": self.question.stdin or "",
+                    },
                 )
                 if submit_resp.status_code != 201:
                     self.score = 0
                     return
 
-                token = submit_resp.json()['token']
+                token = submit_resp.json()["token"]
 
-                for _ in range(10): 
+                for _ in range(10):
                     time.sleep(1)
-                    result_resp = requests.get(f'http://localhost:2358/submissions/{token}')
+                    result_resp = requests.get(
+                        f"http://localhost:2358/submissions/{token}"
+                    )
                     if result_resp.status_code == 200:
                         result = result_resp.json()
-                        if result['status']['id'] in [1, 2]:  
+                        if result["status"]["id"] in [1, 2]:
                             continue
-                        output = (result['stdout'] or '').strip()
-                        error = result['stderr'] or ''
+                        output = (result["stdout"] or "").strip()
+                        error = result["stderr"] or ""
                         if error:
                             self.score = 0
                             break
@@ -191,11 +201,11 @@ class Answer(models.Model):
                         self.score = 10 if output == correct_output else 0
                         break
                 else:
-                    self.score = 0  
+                    self.score = 0
             except Exception:
                 self.score = 0
 
     def save(self, *args, **kwargs):
-        if not self.id: 
+        if not self.id:
             self.auto_evaluate()
         super().save(*args, **kwargs)

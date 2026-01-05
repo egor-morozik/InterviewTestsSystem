@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('candidate_interface', '0003_invitation_completed'),
+        ("candidate_interface", "0003_invitation_completed"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='answer',
-            name='tab_switches',
-            field=models.PositiveIntegerField(default=0, verbose_name='Количество уходов с вкладки'),
+            model_name="answer",
+            name="tab_switches",
+            field=models.PositiveIntegerField(
+                default=0, verbose_name="Количество уходов с вкладки"
+            ),
         ),
     ]

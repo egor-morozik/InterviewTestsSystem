@@ -1,10 +1,11 @@
-from django.core.mail import send_mail
-from django.conf import settings
-
-from dotenv import load_dotenv
 import os
 
+from django.conf import settings
+from django.core.mail import send_mail
+from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def send_test_invitation_email(invitation):
     if invitation.sent:
@@ -32,9 +33,9 @@ def send_test_invitation_email(invitation):
         message=message.strip(),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[invitation.candidate.email],
-        fail_silently=False,  
+        fail_silently=False,
     )
 
     invitation.sent = True
-    invitation.save(update_fields=['sent'])
+    invitation.save(update_fields=["sent"])
     return True
