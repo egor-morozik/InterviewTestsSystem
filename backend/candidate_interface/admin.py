@@ -1,12 +1,14 @@
 from django import forms
+from django.conf import settings
 from django.contrib import admin
-from django.shortcuts import render
 from django.utils.html import format_html
-from django.urls import path, reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.core.mail import send_mail
+
+from backend.candidate_interface.utils import send_test_invitation_email
 
 from .models import Candidate, Invitation, Answer
-from interviewer_interface.models import TestTemplate
 
 
 class InvitationAdminForm(forms.ModelForm):
@@ -22,13 +24,16 @@ class InvitationAdminForm(forms.ModelForm):
         fields = '__all__'  
 
     def save(self, commit=True):
-        instance = super().save(commit=False)
-        if self.cleaned_data.get('send_immediately'):
-            instance.sent = True
-        if commit:
-            instance.save()
-        return instance
-    
+            instance = super().save(commit=False)
+            send_now = self.cleaned_data.get('send_immediately')
+
+            if send_now:
+                send_test_invitation_email(instance)  
+
+            if commit:
+                instance.save()
+            return instance
+        
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
     list_display  = (
@@ -95,13 +100,6 @@ class InvitationAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">Выслать</a>', url)
     resend_invitation.short_description = "Выслать"
 
-    def send_selected_invitations(self, request, queryset):
-        for invitation in queryset:
-            invitation.sent = True
-            invitation.save()
-        self.message_user(request, f"Отправлено/переотправлено {queryset.count()} приглашений.")
-    send_selected_invitations.short_description = "Отправить/переотправить выбранные"
-
     def get_urls(self):
         from django.urls import path
         urls = super().get_urls()
@@ -111,41 +109,30 @@ class InvitationAdmin(admin.ModelAdmin):
                  self.admin_site.admin_view(self.send_single_invitation),
                  name='send_invitation'
                 ),
-            path(
-                'results/',
-                self.admin_site.admin_view(self.results_view),
-                name='invitation_results'
-                ),
             ]
         return custom_urls + urls
 
     def send_single_invitation(self, request, invitation_id):
         invitation = Invitation.objects.get(pk=invitation_id)
-        invitation.sent = True
-        invitation.save()
-        self.message_user(
-            request, 
-            f"Приглашение для {invitation.candidate.email} отправлено/переотправлено."
-            )
+
+        if send_test_invitation_email(invitation):
+            self.message_user(request, f"Письмо отправлено на {invitation.candidate.email}")
+        else:
+            self.message_user(request, f"Письмо уже было отправлено ранее.")
+
         return HttpResponseRedirect(
             request.META.get('HTTP_REFERER', 'admin:candidate_interface_invitation_changelist')
         )
+    
+    def send_selected_invitations(self, request, queryset):
+        sent_count = 0
+        for invitation in queryset:
+            if send_test_invitation_email(invitation):
+                sent_count += 1
 
-    def results_view(self, request):
-        invitations = Invitation.objects.filter(answers__isnull=False).distinct()
-        context = {
-            'title': 'Результаты тестов',
-            'invitations': invitations,
-            'site_header': 'Результаты',
-            'site_title': 'Результаты',
-        }
-        return render(request, 'admin/candidate_interface/results.html', context)
-    def tab_switches_hidden_count(self, obj):
-        return obj.tab_switches.filter(event_type='hidden').count()
-    def tab_switches_visible_count(self, obj):
-        return obj.tab_switches.filter(event_type='visible').count()
-    tab_switches_hidden_count.short_description = "Уходов с вкладки"
-    tab_switches_visible_count.short_description = "Возвратов на вкладку"
+        self.message_user(request, f"Отправлено {sent_count} новых писем.")
+    send_selected_invitations.short_description = "Отправить приглашения по email"
+
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
