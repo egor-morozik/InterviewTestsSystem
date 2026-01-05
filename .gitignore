@@ -1,13 +1,11 @@
-# Django
-*.log
-*.pot
-*.pyc
-__pycache__/
-local_settings.py
-db.sqlite3
-media/
-
-# Environments
+backend/.env
+backend/db.sqlite3
+backend/__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 .env
 .venv
 env/
@@ -15,13 +13,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
+*.log
+local_settings.py
 .DS_Store
-Thumbs.db" > .gitignore
