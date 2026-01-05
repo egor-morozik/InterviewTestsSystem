@@ -8,7 +8,7 @@ from django.core.mail import send_mail
 
 from .utils import send_test_invitation_email
 
-from .models import Candidate, Invitation, Answer
+from .models import Candidate, Invitation, Answer, QuestionFeedback
 
 
 class InvitationAdminForm(forms.ModelForm):
@@ -45,12 +45,26 @@ class CandidateAdmin(admin.ModelAdmin):
         'full_name',
         )
 
+class QuestionFeedbackInline(admin.TabularInline):
+    model = QuestionFeedback
+    extra = 0
+    fields = ('question', 'comment', 'score')
+    readonly_fields = ('question',)
+
+    def has_add_permission(self, request, obj):
+        return request.user.is_tech_lead and obj and obj.interview_type == 'technical'
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_tech_lead and obj and obj.interview_type == 'technical'
+    
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
     form = InvitationAdminForm
     list_display = (
         'candidate',
         'test_template',
+        'interview_type',         
+        'assigned_tech_lead',
         'unique_link_short',
         'sent',
         'completed',
@@ -62,6 +76,7 @@ class InvitationAdmin(admin.ModelAdmin):
         'resend_invitation',
         )
     list_filter = (
+        'interview_type',
         'test_template', 
         'sent', 
         'completed'
@@ -80,7 +95,16 @@ class InvitationAdmin(admin.ModelAdmin):
     readonly_fields = (
         'unique_link',
         )
+    inlines = [
+        QuestionFeedbackInline,
+        ]
 
+    def get_inlines(self, request, obj):
+            inlines = super().get_inlines(request, obj)
+            if obj and obj.interview_type == 'general':
+                return [] 
+            return inlines
+    
     def unique_link_short(self, obj):
         return str(obj.unique_link)[:8] + "..."
     unique_link_short.short_description = "Ссылка"
@@ -145,8 +169,20 @@ class InvitationAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_tech_lead and not request.user.is_hr:
-            return qs.filter(assigned_tech_lead=request.user)
-        return qs  
+            return qs.filter(assigned_tech_lead=request.user, interview_type='technical')
+        return qs
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if obj and obj.interview_type == 'general':
+            fields = [f for f in fields if f != 'assigned_tech_lead']
+        return fields
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = super().get_readonly_fields(request, obj)
+        if obj and obj.interview_type == 'general':
+            readonly = list(readonly) + ['assigned_tech_lead']
+        return readonly
 
     def has_add_permission(self, request):
         return request.user.is_hr

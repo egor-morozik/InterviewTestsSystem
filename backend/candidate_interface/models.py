@@ -48,6 +48,16 @@ class Invitation(models.Model):
         default=False,
         verbose_name="Пройден",
         )
+    INTERVIEW_TYPES = (
+        ('general', 'Общий тест (HR)'),
+        ('technical', 'Техническое собеседование (Tech Lead)'),
+        )
+    interview_type = models.CharField(
+        max_length=20,
+        choices=INTERVIEW_TYPES,
+        default='general',
+        verbose_name="Тип собеседования"
+        )
     assigned_tech_lead = models.ForeignKey(
         'interviewer_interface.InterviewerUser',
         null=True,
@@ -56,6 +66,8 @@ class Invitation(models.Model):
         limit_choices_to={'is_tech_lead': True},
         verbose_name="Назначенный Tech Lead"
         )
+    tech_comments = models.TextField(blank=True, verbose_name="Итоговый комментарий Tech Lead")
+    tech_total_score = models.IntegerField(null=True, blank=True, verbose_name="Итоговый балл от Tech Lead")
     def __str__(self):
         return f"Приглашение для {self.candidate.email}-{self.test_template.name}"
     class Meta:
@@ -65,6 +77,15 @@ class Invitation(models.Model):
                 "can assign hr/tech interview",
             ),
         ]
+
+class QuestionFeedback(models.Model):
+    invitation = models.ForeignKey(Invitation, on_delete=models.CASCADE, related_name='feedbacks')
+    question = models.ForeignKey('interviewer_interface.Question', on_delete=models.CASCADE)
+    comment = models.TextField(blank=True, verbose_name="Комментарий по вопросу")
+    score = models.IntegerField(null=True, blank=True, verbose_name="Баллы за вопрос")
+
+    class Meta:
+        unique_together = ('invitation', 'question')
 
 class TabSwitchLog(models.Model):
     invitation = models.ForeignKey(
