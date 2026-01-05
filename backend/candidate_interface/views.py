@@ -3,10 +3,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.utils import timezone
 from .models import Invitation, Answer, TabSwitchLog
-from interviewer_interface.models import Question
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
 
 @csrf_exempt  
 def log_tab_switch(request, unique_link):

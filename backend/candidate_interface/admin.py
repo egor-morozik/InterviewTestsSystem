@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.core.mail import send_mail
 
-from backend.candidate_interface.utils import send_test_invitation_email
+from .utils import send_test_invitation_email
 
 from .models import Candidate, Invitation, Answer
 
@@ -54,6 +54,7 @@ class InvitationAdmin(admin.ModelAdmin):
         'unique_link_short',
         'sent',
         'completed',
+        'assigned_tech_lead',
         'total_score',
         'tab_switches_hidden_count',
         'tab_switches_visible_count',
@@ -132,6 +133,28 @@ class InvitationAdmin(admin.ModelAdmin):
 
         self.message_user(request, f"Отправлено {sent_count} новых писем.")
     send_selected_invitations.short_description = "Отправить приглашения по email"
+
+    def tab_switches_hidden_count(self, obj):
+        return obj.tab_switches.filter(event_type='hidden').count()
+    tab_switches_hidden_count.short_description = "Уходов с вкладки"
+
+    def tab_switches_visible_count(self, obj):
+        return obj.tab_switches.filter(event_type='visible').count()
+    tab_switches_visible_count.short_description = "Возвратов на вкладку"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_tech_lead and not request.user.is_hr:
+            return qs.filter(assigned_tech_lead=request.user)
+        return qs  
+
+    def has_add_permission(self, request):
+        return request.user.is_hr
+
+    def has_change_permission(self, request, obj=None):
+        if obj and request.user.is_tech_lead and not request.user.is_hr:
+            return False
+        return super().has_change_permission(request, obj)
 
 
 @admin.register(Answer)

@@ -48,8 +48,23 @@ class Invitation(models.Model):
         default=False,
         verbose_name="Пройден",
         )
+    assigned_tech_lead = models.ForeignKey(
+        'interviewer_interface.InterviewerUser',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        limit_choices_to={'is_tech_lead': True},
+        verbose_name="Назначенный Tech Lead"
+        )
     def __str__(self):
         return f"Приглашение для {self.candidate.email}-{self.test_template.name}"
+    class Meta:
+        permissions = [
+            (
+                "can_assign_interview", 
+                "can assign hr/tech interview",
+            ),
+        ]
 
 class TabSwitchLog(models.Model):
     invitation = models.ForeignKey(

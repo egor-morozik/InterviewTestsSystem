@@ -2,7 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class InterviewerUser(AbstractUser):
-    pass
+    is_hr = models.BooleanField(default=False, verbose_name="HR")
+    is_tech_lead = models.BooleanField(default=False, verbose_name="Tech Lead")
 
 class TestTemplate(models.Model):
     name = models.CharField(

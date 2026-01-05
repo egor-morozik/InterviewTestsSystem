@@ -1,10 +1,10 @@
 from django.core.mail import send_mail
 from django.conf import settings
 
-from dotenv import loadenv
+from dotenv import load_dotenv
 import os
 
-loadenv()
+load_dotenv()
 
 def send_test_invitation_email(invitation):
     if invitation.sent:
