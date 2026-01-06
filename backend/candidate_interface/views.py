@@ -175,3 +175,19 @@ def finish_test(request, unique_link):
             "message": "Тест успешно завершён. Спасибо!",
         },
     )
+
+def technical_interview(request, unique_link, question_id=None):
+    invitation = get_object_or_404(Invitation, unique_link=unique_link, interview_type='technical')
+
+    if request.user.is_authenticated:
+        if request.user.is_tech_lead and invitation.assigned_tech_lead != request.user:
+            return HttpResponse("Доступ запрещён", status=403)
+    else:
+        pass
+
+    context = {
+        'invitation': invitation,
+        'ws_url': f"ws://127.0.0.1:8000/ws/interview/{unique_link}/",
+        'is_interviewer': request.user.is_authenticated and request.user.is_tech_lead,
+    }
+    return render(request, 'candidate_interface/technical_interview.html', context)
