@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "interviewer_interface",
     "candidate_interface",
     "channels",
-    "daphne",  
+    "daphne",
 ]
 
 MIDDLEWARE = [
