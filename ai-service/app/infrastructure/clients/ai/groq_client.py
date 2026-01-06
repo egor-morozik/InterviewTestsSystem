@@ -1,10 +1,10 @@
 import json
 
-from .base import BaseAIClient
-from ....domain.entities.question import Question
-from ....domain.entities.evaluation import Evaluation
-
 from groq import AsyncGroq
+
+from ....domain.entities.evaluation import Evaluation
+from ....domain.entities.question import Question
+from .base import BaseAIClient
 
 
 class GroqClient(BaseAIClient):
@@ -28,11 +28,11 @@ class GroqClient(BaseAIClient):
         response = await self.client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model=self.model,
-            response_format={"type": "json_object"}  
+            response_format={"type": "json_object"},
         )
-        
+
         data = json.loads(response.choices[0].message.content)
-        
+
         return Question(**data)
 
     async def evaluate_answer(self, question: Question, answer: str) -> Evaluation:
@@ -49,14 +49,11 @@ class GroqClient(BaseAIClient):
         response = await self.client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model=self.model,
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
 
         data = json.loads(response.choices[0].message.content)
-        
+
         return Evaluation(
-            score=data["score"],
-            feedback=data["feedback"],
-            model_name=self.model
+            score=data["score"], feedback=data["feedback"], model_name=self.model
         )
-    

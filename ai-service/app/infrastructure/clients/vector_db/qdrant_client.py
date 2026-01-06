@@ -1,5 +1,7 @@
-from .base import BaseVectorDB
 from typing import List
+
+from .base import BaseVectorDB
+
 
 class QdrantClient(BaseVectorDB):
     def __init__(self, url: str, api_key: str):
@@ -11,4 +13,3 @@ class QdrantClient(BaseVectorDB):
 
     async def search_similar(self, query: str, limit: int = 5) -> List[str]:
         return ["Результат 1", "Результат 2"]
-    

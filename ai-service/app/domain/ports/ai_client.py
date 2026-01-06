@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from entities.question import Question
+
 from entities.evaluation import Evaluation
+from entities.question import Question
+
 
 class AIClient(ABC):
     @abstractmethod
