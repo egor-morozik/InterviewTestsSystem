@@ -4,7 +4,6 @@ import uuid
 
 import requests
 from django.db import models
-
 from interviewer_interface.models import Question, TestTemplate
 
 

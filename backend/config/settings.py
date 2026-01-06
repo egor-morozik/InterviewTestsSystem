@@ -77,7 +77,7 @@ TEMPLATES = [
     },
 ]
 
-ASGI_APPLICATION = "interview_system.asgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
