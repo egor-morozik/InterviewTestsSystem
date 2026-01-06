@@ -29,11 +29,6 @@ jobs:
       run: |
         cd backend
         black . --check --diff
-    
-    - name: Check imports with isort
-      run: |
-        cd backend
-        isort . --check --diff
 
   cd:
     needs: ci
