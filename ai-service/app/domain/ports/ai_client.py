@@ -4,9 +4,9 @@ from entities.evaluation import Evaluation
 
 class AIClient(ABC):
     @abstractmethod
-    async def ask_question(self, question: Question) -> str:
+    async def create_question(self, description: str) -> Question:
         pass
 
     @abstractmethod
-    async def evaluate_answer(self, answer: str) -> Evaluation:
+    async def evaluate_answer(self, question: Question, answer: str) -> Evaluation:
         pass
