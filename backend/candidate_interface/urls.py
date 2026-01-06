@@ -1,5 +1,7 @@
 from django.urls import path
 
+from backend.candidate_interface.api.views import InterviewSessionView
+
 from . import views
 
 app_name = "candidate_interface"

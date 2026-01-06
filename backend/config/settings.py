@@ -42,10 +42,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "interviewer_interface",
-    "candidate_interface",
+    "rest_framework",
     "channels",
     "daphne",
+    "interviewer_interface",
+    "candidate_interface",
 ]
 
 MIDDLEWARE = [
@@ -146,3 +147,15 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "egor.mrz04@gmail.com"
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = "<mycompany.worker@gmail.com>"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+}
