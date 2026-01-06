@@ -1,7 +1,13 @@
-from fastapi import FastAPI
+from infrastructure.factories.client_factory import ClientFactory
+from domain.entities.question import Question
 
-app = FastAPI()
+async def run_app():
+    factory = ClientFactory()
+    
+    ai_client = factory.ai
+    db_client = factory.db
 
-@app.get("/")
-async def root():
-    return {"message": "FastAPI"}
+    question = Question(text="Как работает Docker?")
+    answer = await ai_client.ask_question(question)
+    await db_client.save_embedding(answer, {"type": "ai_response"})
+    
