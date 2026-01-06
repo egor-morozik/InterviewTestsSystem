@@ -7,5 +7,8 @@ class VectorDBFactory:
     @staticmethod
     def create_client() -> VectorDB:
         if settings.DB_TYPE == "qdrant":
-            return QdrantClient(api_key=settings.QDRANT_API_KEY.get_secret_value())
+            return QdrantClient(
+                api_key=settings.QDRANT_API_KEY.get_secret_value(),
+                url=settings.QDRANT_URL.get_secret_value(),
+            )
         raise ValueError(f"Unknown DB type: {settings.DB_TYPE}")

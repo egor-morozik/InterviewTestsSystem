@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from entities.question import Question
-
 
 class VectorDB(ABC):
     @abstractmethod
@@ -10,5 +8,5 @@ class VectorDB(ABC):
         pass
 
     @abstractmethod
-    async def search_similar(self, query: str, limit: int = 5) -> List[str]:
+    async def search_similar(self, query: str, limit: int = 3) -> List[str]:
         pass

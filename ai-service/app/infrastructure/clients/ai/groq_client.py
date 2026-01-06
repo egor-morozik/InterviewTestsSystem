@@ -38,7 +38,7 @@ class GroqClient(BaseAIClient):
     async def evaluate_answer(self, question: Question, answer: str) -> Evaluation:
         prompt = f"""
         Вопрос: {question.text}
-        Правильный ответ: {question.correct_answer}
+        Правильный ответ(может не быть): {question.correct_answer}
         Ответ пользователя: {answer}
         
         Оцени ответ пользователя. Верни JSON:

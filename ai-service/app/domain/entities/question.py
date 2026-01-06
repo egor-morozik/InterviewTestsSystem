@@ -5,16 +5,16 @@ from pydantic import BaseModel, Field
 
 
 class QuestionType(str, Enum):
-    TEXT            = "text"
-    SINGLE_CHOICE   = "single_choice"
+    TEXT = "text"
+    SINGLE_CHOICE = "single_choice"
     MULTIPLE_CHOICE = "multiple_choice"
-    CODE            = "code"
+    CODE = "code"
 
 
 class QuestionComplexity(str, Enum):
-    EASY =   "easy"
+    EASY = "easy"
     MEDIUM = "medium"
-    HARD =   "hard"
+    HARD = "hard"
 
 
 class Tag(BaseModel):
@@ -23,32 +23,31 @@ class Tag(BaseModel):
 
 class Question(BaseModel):
     complexity: QuestionComplexity = Field(
-        default=QuestionComplexity.MEDIUM, 
-        description="Сложность вопроса"
-        )
+        default=QuestionComplexity.MEDIUM, description="Сложность вопроса"
+    )
 
     text: str = Field(
-        ..., 
-        min_length=1, 
+        ...,
+        min_length=1,
         description="Текст вопроса",
-        )
+    )
 
     question_type: QuestionType = Field(
-        default=QuestionType.TEXT, 
+        default=QuestionType.TEXT,
         description="Тип вопроса",
-        )
+    )
 
     correct_answer: str = Field(
-        ..., 
+        ...,
         description="Правильный ответ для автооценки",
-        )
+    )
 
     stdin: Optional[str] = Field(
-        default="", 
+        default="",
         description="Входные данные для кода",
-        )
+    )
 
     tags: List[Tag] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="Теги вопроса",
-        )
+    )

@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY: SecretStr | None = None
 
-    QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_URL: SecretStr = "http://localhost:6333"
     QDRANT_API_KEY: SecretStr | None = None
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
