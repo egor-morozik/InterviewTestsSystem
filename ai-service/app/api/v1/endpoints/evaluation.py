@@ -15,18 +15,11 @@ class AnswerEvaluationRequest(BaseModel):
     correct_answer: Optional[str] = Field(
         None, description="Правильный ответ (если есть)"
     )
-    criteria: List[str] = Field(
-        default=["accuracy", "completeness", "clarity"], description="Критерии оценки"
-    )
 
 
 class AIEvaluation(BaseModel):
     score: float = Field(..., ge=0.0, le=100.0, description="Оценка в процентах")
     feedback: str = Field(..., description="Развернутый фидбэк")
-    strengths: List[str] = Field(..., description="Сильные стороны ответа")
-    weaknesses: List[str] = Field(..., description="Слабые стороны ответа")
-    suggestions: List[str] = Field(..., description="Предложения по улучшению")
-    criteria_scores: dict = Field(..., description="Оценки по каждому критерию")
 
 
 @router.post("/evaluate-answer", response_model=AIEvaluation)
@@ -39,7 +32,6 @@ async def evaluate_answer(
         answer_text=request.answer_text,
         question_type=request.question_type,
         correct_answer=request.correct_answer,
-        criteria=request.criteria,
     )
 
     return evaluation

@@ -26,7 +26,7 @@ class Question(BaseModel):
         default=QuestionComplexity.MEDIUM, description="Сложность вопроса"
     )
 
-    id: int = Field (
+    id: int = Field(
         ge=1,
         description="Индефикатор вопроса",
     )
