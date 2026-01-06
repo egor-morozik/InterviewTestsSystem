@@ -8,5 +8,8 @@ class QuestionService:
         self.ai = ai_client
         self.db = db_client
 
-    async def generate_and_save(self, description: str) -> Question:
-        pass
+    async def generate(self, description: str) -> Question:
+        return self.ai.create_question(description)
+
+    async def save_question(self, new_question: Question) -> None:
+        self.db.save_embedding(new_question.text, dict(Question.id))

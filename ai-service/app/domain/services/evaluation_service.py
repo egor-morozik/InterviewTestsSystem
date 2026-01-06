@@ -5,9 +5,8 @@ from ..ports.vector_db import VectorDB
 
 
 class EvaluationService:
-    def __init__(self, ai_client: AIClient, db_client: VectorDB):
+    def __init__(self, ai_client: AIClient):
         self.ai = ai_client
-        self.db = db_client
 
-    async def get_mark(self, qustion: Question, answer: str) -> Evaluation:
-        pass
+    async def get_mark(self, question: Question, answer: str) -> Evaluation:
+        return self.ai.evaluate_answer(question, answer)
