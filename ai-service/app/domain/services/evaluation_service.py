@@ -3,7 +3,7 @@ from ..ports.vector_db import VectorDB
 from ..entities.question import Question
 from ..entities.evaluation import Evaluation
 
-class QuestionService:
+class EvaluationService:
     def __init__(self, ai_client: AIClient, db_client: VectorDB):
         self.ai = ai_client
         self.db = db_client

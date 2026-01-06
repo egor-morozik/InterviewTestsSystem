@@ -9,3 +9,4 @@ class SimilarityService:
 
     async def check_similarity(self, question: Question) -> bool:
         pass
+    
