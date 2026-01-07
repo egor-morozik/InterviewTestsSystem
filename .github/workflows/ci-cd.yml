@@ -9,7 +9,6 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -19,15 +18,16 @@ jobs:
       with:
         python-version: '3.12'
     
-    - name: Install dependencies
+    - name: Install backend dependencies & lint
       run: |
         cd backend
-        pip install -r requirements.txt
-        pip install black 
+        pip install -r requirements.txt black
+        black . --check --diff
     
-    - name: Check code style with black
+    - name: Install ai-service dependencies & lint
       run: |
-        cd backend
+        cd ai-service
+        pip install -r requirements.txt black
         black . --check --diff
 
   cd:
@@ -48,14 +48,20 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     
-    - name: Build and push Docker image
+    - name: Build and push backend image
       uses: docker/build-push-action@v5
       with:
         context: ./backend
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system:latest
-          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system:${{ github.sha }}
-        build-args: |
-          BUILD_VERSION=${{ github.sha }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-backend:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-backend:${{ github.sha }}
     
+    - name: Build and push ai-service image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./ai-service
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-ai:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-ai:${{ github.sha }}

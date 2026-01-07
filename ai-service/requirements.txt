@@ -1,6 +1,7 @@
 fastapi
 uvicorn
-pydantic
-pydantic-settings
 groq
 qdrant-client
+sentence-transformers
+python-dotenv
+pydantic
