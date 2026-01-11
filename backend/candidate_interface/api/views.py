@@ -198,3 +198,138 @@ class InterviewSessionView(APIView):
 
         serializer = InvitationSerializer(invitation)
         return Response(serializer.data)
+
+class TestResultsListView(APIView):
+    """View results of all completed tests"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get all completed invitations (only HR can see all)
+        if request.user.is_hr:
+            invitations = Invitation.objects.filter(completed=True).select_related(
+                'candidate', 'test_template', 'assigned_tech_lead'
+            ).order_by('-id')
+        else:
+            # Tech Lead sees only assigned interviews
+            invitations = Invitation.objects.filter(
+                assigned_tech_lead=request.user,
+                completed=True,
+                interview_type='technical'
+            ).select_related('candidate', 'test_template').order_by('-id')
+
+        results = []
+        for invitation in invitations:
+            answers = invitation.answers.all()
+            auto_score = sum(a.score for a in answers) if answers else 0
+            
+            # Get manual score from QuestionFeedback
+            feedbacks = invitation.feedbacks.all()
+            manual_score = sum(f.score for f in feedbacks if f.score is not None) if feedbacks else 0
+            
+            results.append({
+                'id': invitation.id,
+                'candidate_id': invitation.candidate.id,
+                'candidate_name': invitation.candidate.full_name,
+                'candidate_email': invitation.candidate.email,
+                'test_template': invitation.test_template.name,
+                'interview_type': invitation.get_interview_type_display(),
+                'auto_score': auto_score,
+                'manual_score': manual_score,
+                'completed_at': invitation.answers.latest('id').id if answers else None,  # Use as timestamp proxy
+                'unique_link': str(invitation.unique_link),
+            })
+
+        return Response(results)
+
+
+class TestResultDetailView(APIView):
+    """View detailed results of a specific candidate test"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, invitation_id):
+        try:
+            invitation = Invitation.objects.get(id=invitation_id)
+        except Invitation.DoesNotExist:
+            return Response({"error": "Тест не найден"}, status=404)
+
+        # Check permissions
+        if not request.user.is_hr:
+            if invitation.interview_type == 'technical':
+                if request.user != invitation.assigned_tech_lead:
+                    return Response({"error": "Доступ запрещён"}, status=403)
+            else:
+                return Response({"error": "Доступ запрещён"}, status=403)
+
+        answers = invitation.answers.all().select_related('question')
+        feedbacks = {f.question_id: f for f in invitation.feedbacks.all()}
+
+        answer_details = []
+        total_auto = 0
+        total_manual = 0
+
+        for answer in answers:
+            auto_score = answer.score
+            total_auto += auto_score
+
+            feedback = feedbacks.get(answer.question.id)
+            manual_score = feedback.score if feedback and feedback.score is not None else None
+            if manual_score is not None:
+                total_manual += manual_score
+
+            answer_details.append({
+                'question_id': answer.question.id,
+                'question_text': answer.question.text,
+                'question_type': answer.question.get_question_type_display(),
+                'answer': answer.response,
+                'auto_score': auto_score,
+                'manual_score': manual_score,
+                'feedback': feedback.comment if feedback else '',
+            })
+
+        return Response({
+            'candidate': {
+                'name': invitation.candidate.full_name,
+                'email': invitation.candidate.email,
+            },
+            'test_template': invitation.test_template.name,
+            'total_auto_score': total_auto,
+            'total_manual_score': total_manual if total_manual > 0 else None,
+            'answers': answer_details,
+        })
+
+
+class QuestionFeedbackView(APIView):
+    """Save/update manual feedback for a question"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invitation_id, question_id):
+        try:
+            invitation = Invitation.objects.get(id=invitation_id)
+        except Invitation.DoesNotExist:
+            return Response({"error": "Тест не найден"}, status=404)
+
+        # Check permissions
+        if not request.user.is_hr:
+            if invitation.interview_type == 'technical':
+                if request.user != invitation.assigned_tech_lead:
+                    return Response({"error": "Доступ запрещён"}, status=403)
+            else:
+                return Response({"error": "Доступ запрещён"}, status=403)
+
+        try:
+            question = Question.objects.get(id=question_id)
+        except Question.DoesNotExist:
+            return Response({"error": "Вопрос не найден"}, status=404)
+
+        score = request.data.get('score')
+        comment = request.data.get('comment', '')
+
+        feedback, _ = invitation.feedbacks.update_or_create(
+            question=question,
+            defaults={'score': score, 'comment': comment}
+        )
+
+        return Response({
+            'score': feedback.score,
+            'comment': feedback.comment,
+        })

@@ -35,3 +35,21 @@ export const getInterviewSession = async (uniqueLink) => {
   return response.data
 }
 
+// Results API
+export const getTestResults = async () => {
+  const response = await apiClient.get(`/candidate/results/`)
+  return response.data
+}
+
+export const getTestResultDetail = async (invitationId) => {
+  const response = await apiClient.get(`/candidate/results/${invitationId}/`)
+  return response.data
+}
+
+export const saveQuestionFeedback = async (invitationId, questionId, score, comment) => {
+  const response = await apiClient.post(`/candidate/results/${invitationId}/question/${questionId}/feedback/`, {
+    score,
+    comment
+  })
+  return response.data
+}

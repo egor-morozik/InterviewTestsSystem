@@ -7,6 +7,9 @@ from .views import (
     QuestionDetailView,
     SubmitAnswerView,
     TestSessionView,
+    TestResultsListView,
+    TestResultDetailView,
+    QuestionFeedbackView,
 )
 
 urlpatterns = [
@@ -39,5 +42,20 @@ urlpatterns = [
         "session/<uuid:unique_link>/",
         InterviewSessionView.as_view(),
         name="api_interview_session",
+    ),
+    path(
+        "results/",
+        TestResultsListView.as_view(),
+        name="test_results_list",
+    ),
+    path(
+        "results/<int:invitation_id>/",
+        TestResultDetailView.as_view(),
+        name="test_result_detail",
+    ),
+    path(
+        "results/<int:invitation_id>/question/<int:question_id>/feedback/",
+        QuestionFeedbackView.as_view(),
+        name="question_feedback",
     ),
 ]

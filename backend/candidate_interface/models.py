@@ -209,3 +209,40 @@ class Answer(models.Model):
         if not self.id:
             self.auto_evaluate()
         super().save(*args, **kwargs)
+
+
+class ManualGrade(models.Model):
+    """Ручная оценка кандидата для теста"""
+    invitation = models.OneToOneField(
+        Invitation,
+        on_delete=models.CASCADE,
+        related_name="manual_grade",
+        verbose_name="Приглашение",
+    )
+    score = models.IntegerField(
+        default=0,
+        help_text="Общий балл (0-100)",
+        verbose_name="Ручной балл",
+    )
+    comment = models.TextField(
+        blank=True,
+        verbose_name="Комментарий оценивающего",
+    )
+    graded_by = models.ForeignKey(
+        "interviewer_interface.InterviewerUser",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Оценил",
+    )
+    graded_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Время оценки",
+    )
+
+    def __str__(self):
+        return f"Ручная оценка {self.invitation.candidate.full_name} - {self.score}"
+
+    class Meta:
+        verbose_name = "Ручная оценка"
+        verbose_name_plural = "Ручные оценки"

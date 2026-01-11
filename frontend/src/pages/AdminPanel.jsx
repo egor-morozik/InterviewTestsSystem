@@ -12,6 +12,7 @@ import {
   createTestTemplate,
   generateQuestion,
 } from '../api/adminApi'
+import { getTestResults, getTestResultDetail, saveQuestionFeedback } from '../api/testApi'
 import CreateInvitationModal from '../components/CreateInvitationModal'
 
 function AdminPanel() {
@@ -26,6 +27,8 @@ function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [results, setResults] = useState([])
+  const [selectedResult, setSelectedResult] = useState(null)
 
   useEffect(() => {
     loadData()
@@ -58,6 +61,10 @@ function AdminPanel() {
         setInvitations(invData)
         setTemplates(templatesData)
         setTechLeads(techLeadsData)
+      } else if (activeTab === 'results') {
+        const data = await getTestResults()
+        setResults(data)
+        setSelectedResult(null)
       }
     } catch (err) {
       console.error('Ошибка загрузки данных:', err)
@@ -149,6 +156,13 @@ function AdminPanel() {
             style={{ borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0', marginBottom: '-2px' }}
           >
             📧 Приглашения
+          </button>
+          <button
+            className={`btn ${activeTab === 'results' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('results')}
+            style={{ borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0', marginBottom: '-2px' }}
+          >
+            📊 Результаты
           </button>
         </div>
 
@@ -473,6 +487,25 @@ function AdminPanel() {
                   )}
                 </div>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Результаты */}
+        {activeTab === 'results' && (
+          <div>
+            {selectedResult ? (
+              <ResultsDetailView
+                result={selectedResult}
+                onBack={() => setSelectedResult(null)}
+                onSaveScore={loadData}
+              />
+            ) : (
+              <ResultsListView
+                results={results}
+                loading={loading}
+                onSelectResult={setSelectedResult}
+              />
             )}
           </div>
         )}
@@ -940,3 +973,250 @@ function CreateQuestionForm({ tags, onCreate }) {
 }
 
 export default AdminPanel
+function ResultsListView({ results, loading, onSelectResult }) {
+  if (loading) {
+    return <div className="loading">Загрузка результатов...</div>
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '60px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
+        <p className="text-secondary">Завершённых тестов пока нет</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: '20px' }}>Результаты тестирования</h2>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: '14px'
+        }}>
+          <thead>
+            <tr style={{ background: 'var(--surface)', borderBottom: '2px solid var(--border-light)' }}>
+              <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Кандидат</th>
+              <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Email</th>
+              <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Тест</th>
+              <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>Тип</th>
+              <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>Автооценка</th>
+              <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>Ручная оценка</th>
+              <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((result, idx) => (
+              <tr key={result.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <td style={{ padding: '12px' }}>
+                  <div style={{ fontWeight: '600' }}>{result.candidate_name}</div>
+                </td>
+                <td style={{ padding: '12px' }}>
+                  <div className="text-secondary" style={{ fontSize: '12px' }}>{result.candidate_email}</div>
+                </td>
+                <td style={{ padding: '12px' }}>
+                  <div>{result.test_template}</div>
+                </td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    background: result.interview_type === 'Техническое собеседование (Tech Lead)' ? '#667eea' : '#4facfe',
+                    color: 'white'
+                  }}>
+                    {result.interview_type === 'Техническое собеседование (Tech Lead)' ? '💻' : '👥'}
+                  </span>
+                </td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: '#43e97b',
+                    color: 'white',
+                    fontWeight: '600'
+                  }}>
+                    {result.auto_score}
+                  </span>
+                </td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  {result.manual_score ? (
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: '#f5a623',
+                      color: 'white',
+                      fontWeight: '600'
+                    }}>
+                      {result.manual_score}
+                    </span>
+                  ) : (
+                    <span className="text-secondary">—</span>
+                  )}
+                </td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <button
+                    className="btn btn-primary"
+                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                    onClick={() => onSelectResult(result.id)}
+                  >
+                    📋 Подробно
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function ResultsDetailView({ result, onBack, onSaveScore }) {
+  const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [editingScores, setEditingScores] = useState({})
+
+  useEffect(() => {
+    loadDetail()
+  }, [result])
+
+  const loadDetail = async () => {
+    try {
+      setLoading(true)
+      const data = await getTestResultDetail(result)
+      setDetail(data)
+    } catch (err) {
+      setError('Ошибка загрузки результатов')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveScore = async (questionId, score) => {
+    try {
+      await saveQuestionFeedback(result, questionId, score, '')
+      // Обновляем локальное состояние
+      setDetail(prev => ({
+        ...prev,
+        answers: prev.answers.map(a => 
+          a.question_id === questionId ? { ...a, manual_score: score } : a
+        )
+      }))
+    } catch (err) {
+      setError('Ошибка сохранения оценки')
+    }
+  }
+
+  if (loading) {
+    return <div className="loading">Загрузка деталей...</div>
+  }
+
+  if (!detail) {
+    return <div className="error">Не удалось загрузить результаты</div>
+  }
+
+  return (
+    <div>
+      <button
+        className="btn btn-outline"
+        onClick={onBack}
+        style={{ marginBottom: '20px' }}
+      >
+        ← Назад
+      </button>
+
+      <div className="card" style={{ marginBottom: '24px', padding: '20px', background: 'var(--surface)' }}>
+        <h2 style={{ margin: '0 0 12px 0' }}>{detail.candidate.name}</h2>
+        <p className="text-secondary" style={{ margin: '0 0 12px 0' }}>{detail.candidate.email}</p>
+        <p className="text-secondary" style={{ margin: 0 }}>Тест: {detail.test_template}</p>
+      </div>
+
+      <div style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+          <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '8px' }}>Автоматическая оценка</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#43e97b' }}>{detail.total_auto_score}</div>
+        </div>
+        <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+          <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '8px' }}>Ручная оценка</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f5a623' }}>
+            {detail.total_manual_score !== null ? detail.total_manual_score : '—'}
+          </div>
+        </div>
+      </div>
+
+      {error && <div className="error" style={{ marginBottom: '16px' }}>{error}</div>}
+
+      <h3 style={{ marginBottom: '16px' }}>Ответы на вопросы</h3>
+      <div style={{ display: 'grid', gap: '16px' }}>
+        {detail.answers.map((answer) => (
+          <div key={answer.question_id} className="card" style={{ padding: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>{answer.question_text}</h4>
+              <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '8px' }}>
+                Тип: {answer.question_type}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '12px', padding: '12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)' }}>
+              <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '4px' }}>Ответ кандидата:</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '13px', wordBreak: 'break-word' }}>{answer.answer}</div>
+            </div>
+
+            <div style={{ marginBottom: '12px', display: 'flex', gap: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '4px' }}>✅ Автооценка</div>
+                <div style={{
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: '#43e97b',
+                  color: 'white',
+                  fontWeight: '600',
+                  textAlign: 'center'
+                }}>
+                  {answer.auto_score} баллов
+                </div>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '4px' }}>✋ Ручная оценка</div>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  placeholder="Оценка"
+                  value={answer.manual_score ?? ''}
+                  onChange={(e) => {
+                    const score = e.target.value ? parseInt(e.target.value) : null
+                    handleSaveScore(answer.question_id, score)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    textAlign: 'center',
+                    fontWeight: '600'
+                  }}
+                />
+              </div>
+            </div>
+
+            {answer.feedback && (
+              <div style={{ padding: '12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)' }}>
+                <div className="text-secondary" style={{ fontSize: '12px', marginBottom: '4px' }}>Комментарий:</div>
+                <div>{answer.feedback}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
