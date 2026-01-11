@@ -3,6 +3,7 @@ from django.urls import path
 from .admin_views import (
     AdminDashboardView,
     CandidateListView,
+    GenerateQuestionView,
     InvitationDetailView,
     InvitationListView,
     QuestionDetailView,
@@ -43,5 +44,10 @@ urlpatterns = [
         "admin/templates/",
         TestTemplateAdminCreateView.as_view(),
         name="admin_template_create",
+    ),
+    path(
+        "admin/generate-question/",
+        GenerateQuestionView.as_view(),
+        name="admin_generate_question",
     ),
 ]

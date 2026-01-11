@@ -109,3 +109,11 @@ export const createTestTemplate = async (data) => {
   const response = await axios.post(`${API_BASE}/admin/templates/`, data)
   return response.data
 }
+
+export const generateQuestion = async (description) => {
+  await getCsrfToken()
+  const response = await axios.post(`${API_BASE}/admin/generate-question/`, {
+    description,
+  })
+  return response.data
+}

@@ -53,13 +53,22 @@ async def health_check():
 
 @app.post("/generate_question")
 async def generate_question(req: GenerateRequest):
-    prompt = f"Сгенерирую вопрос для интервью по текстовому описанию: {req.description}"
-    completion = groq_client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model=GROQ_MODEL,
-    )
-    question = completion.choices[0].message.content.strip()
-    return {"question": question}
+    try:
+        if not GROQ_API_KEY:
+            return {"error": "GROQ_API_KEY not set", "question": ""}
+        
+        prompt = f"Сгенерирую вопрос для интервью по текстовому описанию: {req.description}"
+        completion = groq_client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model=GROQ_MODEL,
+        )
+        question = completion.choices[0].message.content.strip()
+        return {"question": question}
+    except Exception as e:
+        print(f"Error in generate_question: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Generation failed: {str(e)}", "question": ""}
 
 
 @app.post("/evaluate_answer")

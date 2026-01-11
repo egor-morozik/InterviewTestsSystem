@@ -2,6 +2,10 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 from candidate_interface.models import Candidate, Invitation
 from interviewer_interface.models import InterviewerUser, TestTemplate
@@ -391,3 +395,59 @@ class TestTemplateAdminCreateView(APIView):
                 TestTemplateSerializer(tpl).data, status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GenerateQuestionView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """Generate question from text description using AI service"""
+        try:
+            description = request.data.get("description")
+            logger.info(f"Generate question request with description: {description}")
+
+            if not description or not description.strip():
+                return Response(
+                    {"error": "Description is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                # Call AI service
+                ai_service_url = "http://ai-service:8001/generate_question"
+                logger.info(f"Calling AI service at {ai_service_url}")
+                response = httpx.post(
+                    ai_service_url,
+                    json={"description": description},
+                    timeout=30.0,
+                )
+                logger.info(f"AI service response status: {response.status_code}")
+                response.raise_for_status()
+                ai_response = response.json()
+                logger.info(f"AI response: {ai_response}")
+
+                return Response(
+                    {
+                        "text": ai_response.get("question", ""),
+                        "description_used": description,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            except httpx.HTTPError as e:
+                logger.error(f"HTTP Error calling AI service: {str(e)}", exc_info=True)
+                return Response(
+                    {"error": f"Failed to generate question: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            except Exception as e:
+                logger.error(f"Error generating question: {str(e)}", exc_info=True)
+                return Response(
+                    {"error": f"Error: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        except Exception as e:
+            logger.error(f"Unexpected error in GenerateQuestionView: {str(e)}", exc_info=True)
+            return Response(
+                {"error": f"Unexpected error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

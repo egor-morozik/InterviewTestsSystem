@@ -10,6 +10,7 @@ import {
   createQuestion,
   getTags,
   createTestTemplate,
+  generateQuestion,
 } from '../api/adminApi'
 import CreateInvitationModal from '../components/CreateInvitationModal'
 
@@ -633,6 +634,8 @@ function CreateQuestionForm({ tags, onCreate }) {
   const [choices, setChoices] = useState([{ text: '', is_correct: false }])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [generatingQuestion, setGeneratingQuestion] = useState(false)
+  const [generationDescription, setGenerationDescription] = useState('')
 
   const submit = async (e) => {
     e.preventDefault()
@@ -694,6 +697,25 @@ function CreateQuestionForm({ tags, onCreate }) {
   const addChoice = () => setChoices(c => [...c, { text: '', is_correct: false }])
   const removeChoice = (idx) => setChoices(c => c.filter((_, i) => i !== idx))
 
+  const handleGenerateQuestion = async () => {
+    if (!generationDescription.trim()) {
+      setError('Введите описание для генерации вопроса')
+      return
+    }
+
+    try {
+      setGeneratingQuestion(true)
+      setError(null)
+      const result = await generateQuestion(generationDescription)
+      setText(result.text)
+      setGenerationDescription('')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка при генерации вопроса')
+    } finally {
+      setGeneratingQuestion(false)
+    }
+  }
+
   const questionTypeLabels = {
     text: 'Свободный текст (открытый вопрос)',
     single_choice: 'Выбор одного варианта',
@@ -720,6 +742,47 @@ function CreateQuestionForm({ tags, onCreate }) {
 
       <div>
         <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Текст вопроса *</label>
+        <div style={{ marginBottom: '12px', padding: '12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <input
+              type="text"
+              placeholder="Опишите, какой вопрос нужно сгенерировать..."
+              value={generationDescription}
+              onChange={e => setGenerationDescription(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '14px',
+                fontFamily: 'inherit'
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleGenerateQuestion}
+              disabled={generatingQuestion || !generationDescription.trim()}
+              style={{
+                padding: '10px 16px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                cursor: generatingQuestion || !generationDescription.trim() ? 'not-allowed' : 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                opacity: generatingQuestion || !generationDescription.trim() ? 0.6 : 1,
+                transition: 'all 0.2s'
+              }}
+            >
+              {generatingQuestion ? '⏳ Генерирую...' : '✨ Генерировать'}
+            </button>
+          </div>
+          <div className="text-secondary" style={{ fontSize: '12px' }}>
+            ✨ Используйте AI для быстрого создания вопроса
+          </div>
+        </div>
+
         <textarea
           className="form-input"
           placeholder="Сформулируйте вопрос..."
