@@ -338,26 +338,44 @@ function AdminPanel() {
         {/* Шаблоны */}
         {activeTab === 'templates' && (
           <div>
-            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0 }}>Шаблоны тестов</h2>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ margin: '0 0 12px 0' }}>📋 Создать новый шаблон</h2>
+              <p className="text-secondary" style={{ margin: 0, fontSize: '14px' }}>
+                Шаблон — это набор вопросов для проведения тестирования. Выберите вопросы и установите время прохождения.
+              </p>
             </div>
 
             {loading ? (
               <div className="loading">Загрузка...</div>
             ) : (
               <div>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {templates.map((t) => (
-                    <div key={t.id} className="card" style={{ padding: '16px' }}>
-                      <h3 style={{ margin: '0 0 8px 0' }}>{t.name}</h3>
-                      <p className="text-secondary" style={{ margin: 0 }}>{t.description}</p>
-                    </div>
-                  ))}
+                {/* Форма создания (вверху) */}
+                <div className="card" style={{ marginBottom: '32px', padding: '24px', background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)' }}>
+                  <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} />
                 </div>
 
-                <div style={{ marginTop: '24px' }}>
-                  <h3>Создать шаблон</h3>
-                  <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} />
+                {/* Список существующих */}
+                <div>
+                  <h3 style={{ marginBottom: '16px' }}>Существующие шаблоны ({templates.length})</h3>
+                  {templates.length === 0 ? (
+                    <div className="card" style={{ textAlign: 'center', padding: '40px', background: 'var(--surface)' }}>
+                      <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+                      <p className="text-secondary">Шаблонов пока нет. Создайте первый выше!</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      {templates.map((t) => (
+                        <div key={t.id} className="card" style={{ padding: '16px', borderLeft: '4px solid var(--primary)' }}>
+                          <h3 style={{ margin: '0 0 8px 0' }}>{t.name}</h3>
+                          <p className="text-secondary" style={{ margin: '0 0 8px 0', fontSize: '14px' }}>{t.description || '(описание отсутствует)'}</p>
+                          <div style={{ display: 'flex', gap: '12px', fontSize: '12px' }}>
+                            <span className="text-secondary">⏱️ {t.time_limit || 'без ограничения'} мин</span>
+                            <span className="text-secondary">❓ {t.questions.length} вопросов</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -367,30 +385,91 @@ function AdminPanel() {
         {/* Вопросы */}
         {activeTab === 'questions' && (
           <div>
-            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0 }}>Вопросы</h2>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ margin: '0 0 12px 0' }}>❓ Создать новый вопрос</h2>
+              <p className="text-secondary" style={{ margin: 0, fontSize: '14px' }}>
+                Вопросы могут быть разных типов: свободный текст, выбор ответа, написание кода. Выберите тип и заполните детали.
+              </p>
             </div>
 
             {loading ? (
               <div className="loading">Загрузка...</div>
             ) : (
               <div>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {questions.map((q) => (
-                    <div key={q.id} className="card" style={{ padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div>
-                          <h3 style={{ margin: 0 }}>{q.text.slice(0, 120)}</h3>
-                          <div className="text-secondary">{q.question_type} • {q.complexity}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                {/* Форма создания (вверху) */}
+                <div className="card" style={{ marginBottom: '32px', padding: '24px', background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)' }}>
+                  <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} />
                 </div>
 
-                <div style={{ marginTop: '24px' }}>
-                  <h3>Создать вопрос</h3>
-                  <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} />
+                {/* Фильтры */}
+                <div style={{ marginBottom: '20px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className="text-secondary" style={{ alignSelf: 'center' }}>Типы:</span>
+                  <button className="btn btn-outline" style={{ fontSize: '12px' }}>Все ({questions.length})</button>
+                  <button className="btn btn-outline" style={{ fontSize: '12px' }}>📝 Текст</button>
+                  <button className="btn btn-outline" style={{ fontSize: '12px' }}>✓ Выбор одного</button>
+                  <button className="btn btn-outline" style={{ fontSize: '12px' }}>✓✓ Несколько</button>
+                  <button className="btn btn-outline" style={{ fontSize: '12px' }}>💻 Код</button>
+                </div>
+
+                {/* Список существующих */}
+                <div>
+                  <h3 style={{ marginBottom: '16px' }}>Все вопросы ({questions.length})</h3>
+                  {questions.length === 0 ? (
+                    <div className="card" style={{ textAlign: 'center', padding: '40px', background: 'var(--surface)' }}>
+                      <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+                      <p className="text-secondary">Вопросов пока нет. Создайте первый выше!</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      {questions.map((q) => {
+                        const typeDisplay = {
+                          text: '📝 Текст',
+                          single_choice: '✓ Один',
+                          multiple_choice: '✓✓ Несколько',
+                          code: '💻 Код'
+                        }
+                        const complexityColor = {
+                          easy: '#43e97b',
+                          medium: '#f5a623',
+                          hard: '#f5576c'
+                        }
+                        return (
+                          <div key={q.id} className="card" style={{ padding: '16px', borderLeft: `4px solid ${complexityColor[q.complexity] || '#ccc'}` }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <h3 style={{ margin: '0 0 8px 0', lineHeight: '1.4' }}>{q.text.slice(0, 150)}{q.text.length > 150 ? '...' : ''}</h3>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                background: 'var(--border-light)',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                {typeDisplay[q.question_type] || q.question_type}
+                              </span>
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                background: complexityColor[q.complexity] || '#ccc',
+                                color: 'white'
+                              }}>
+                                {q.complexity === 'easy' ? 'Легко' : q.complexity === 'hard' ? 'Сложно' : 'Средне'}
+                              </span>
+                              {q.tags && q.tags.length > 0 && (
+                                <span className="text-secondary" style={{ fontSize: '12px' }}>
+                                  🏷️ {q.tags.map(t => t.name).join(', ')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -417,6 +496,8 @@ function CreateTemplateForm({ questions, onCreate }) {
   const [description, setDescription] = useState('')
   const [timeLimit, setTimeLimit] = useState(0)
   const [selected, setSelected] = useState([])
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const toggle = (id) => {
     setSelected((s) => (s.includes(id) ? s.filter(x => x!==id) : [...s, id]))
@@ -424,33 +505,120 @@ function CreateTemplateForm({ questions, onCreate }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    const payload = {
-      name,
-      description,
-      time_limit: Number(timeLimit) || 0,
-      questions: selected.map(id => ({ question_id: id })),
+    setError(null)
+
+    if (!name.trim()) {
+      setError('Введите название шаблона')
+      return
     }
-    await onCreate(payload)
-    setName('')
-    setDescription('')
-    setTimeLimit(0)
-    setSelected([])
+
+    if (selected.length === 0) {
+      setError('Выберите хотя бы один вопрос')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const payload = {
+        name,
+        description,
+        time_limit: Number(timeLimit) || 0,
+        questions: selected.map(id => ({ question_id: id })),
+      }
+      await onCreate(payload)
+      setName('')
+      setDescription('')
+      setTimeLimit(0)
+      setSelected([])
+      setError(null)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка при создании шаблона')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <form onSubmit={submit} style={{ display: 'grid', gap: '8px' }}>
-      <input className="form-input" placeholder="Название" value={name} onChange={e=>setName(e.target.value)} required />
-      <textarea className="form-input" placeholder="Описание" value={description} onChange={e=>setDescription(e.target.value)} />
-      <input className="form-input" type="number" placeholder="Ограничение (мин)" value={timeLimit} onChange={e=>setTimeLimit(e.target.value)} />
-      <div style={{ maxHeight: '200px', overflow: 'auto', border: '1px solid var(--border-light)', padding: '8px' }}>
-        {questions.map(q => (
-          <label key={q.id} style={{ display: 'block', marginBottom: '6px' }}>
-            <input type="checkbox" checked={selected.includes(q.id)} onChange={()=>toggle(q.id)} /> {' '}
-            {q.text.slice(0,120)}
-          </label>
-        ))}
+    <form onSubmit={submit} style={{ display: 'grid', gap: '16px' }}>
+      <div>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Название шаблона *</label>
+        <input
+          className="form-input"
+          placeholder="Например: Python базовый"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+          style={{ width: '100%' }}
+        />
       </div>
-      <button className="btn btn-primary" type="submit">Создать</button>
+
+      <div>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Описание</label>
+        <textarea
+          className="form-input"
+          placeholder="Описание шаблона, что в нём проверяется..."
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows="3"
+          style={{ width: '100%', resize: 'vertical' }}
+        />
+      </div>
+
+      <div>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Ограничение времени (минуты)</label>
+        <input
+          className="form-input"
+          type="number"
+          placeholder="0 = без ограничений"
+          value={timeLimit}
+          onChange={e => setTimeLimit(e.target.value)}
+          min="0"
+          style={{ width: '100%', maxWidth: '200px' }}
+        />
+        <div className="text-secondary" style={{ fontSize: '12px', marginTop: '4px' }}>
+          Оставьте 0 если нет ограничения
+        </div>
+      </div>
+
+      <div>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+          Выберите вопросы ({selected.length} выбрано) *
+        </label>
+        {questions.length === 0 ? (
+          <div className="card" style={{ padding: '16px', textAlign: 'center', background: 'var(--surface)' }}>
+            <p className="text-secondary">Сначала создайте вопросы во вкладке "Вопросы"</p>
+          </div>
+        ) : (
+          <div style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '12px', maxHeight: '300px', overflow: 'auto', background: 'var(--surface)' }}>
+            {questions.map((q, idx) => (
+              <label key={q.id} style={{ display: 'flex', gap: '8px', padding: '8px 0', borderBottom: idx < questions.length - 1 ? '1px solid var(--border-light)' : 'none', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(q.id)}
+                  onChange={() => toggle(q.id)}
+                  style={{ marginTop: '3px' }}
+                />
+                <span style={{ flex: 1 }}>
+                  <div>{q.text.slice(0, 100)}{q.text.length > 100 ? '...' : ''}</div>
+                  <div className="text-secondary" style={{ fontSize: '12px' }}>
+                    {q.question_type} • {q.complexity}
+                  </div>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div style={{ padding: '12px', background: 'rgba(245, 87, 108, 0.1)', border: '1px solid #f5576c', borderRadius: 'var(--radius-sm)', color: '#f5576c', fontSize: '14px' }}>
+          {error}
+        </div>
+      )}
+
+      <button className="btn btn-primary" type="submit" disabled={loading}>
+        {loading ? '⏳ Создание...' : '✨ Создать шаблон'}
+      </button>
     </form>
   )
 }
@@ -463,86 +631,247 @@ function CreateQuestionForm({ tags, onCreate }) {
   const [stdin, setStdin] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
   const [choices, setChoices] = useState([{ text: '', is_correct: false }])
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
-    const payload = {
-      text,
-      question_type: questionType,
-      complexity,
-      correct_answer: correctAnswer,
-      stdin,
-      tag_ids: selectedTags,
+    setError(null)
+
+    if (!text.trim()) {
+      setError('Введите текст вопроса')
+      return
     }
-    if (questionType === 'single_choice' || questionType === 'multiple_choice') {
-      payload.choices = choices.filter(c=>c.text.trim())
+
+    if ((questionType === 'text' || questionType === 'code') && !correctAnswer.trim()) {
+      setError('Введите правильный ответ')
+      return
     }
-    await onCreate(payload)
-    // reset
-    setText('')
-    setCorrectAnswer('')
-    setStdin('')
-    setSelectedTags([])
-    setChoices([{ text: '', is_correct: false }])
+
+    if ((questionType === 'single_choice' || questionType === 'multiple_choice')) {
+      const filledChoices = choices.filter(c => c.text.trim())
+      if (filledChoices.length < 2) {
+        setError('Нужно минимум 2 варианта ответа')
+        return
+      }
+      const hasCorrect = filledChoices.some(c => c.is_correct)
+      if (!hasCorrect) {
+        setError('Отметьте хотя бы один правильный ответ')
+        return
+      }
+    }
+
+    try {
+      setLoading(true)
+      const payload = {
+        text,
+        question_type: questionType,
+        complexity,
+        correct_answer: correctAnswer,
+        stdin,
+        tag_ids: selectedTags,
+      }
+      if (questionType === 'single_choice' || questionType === 'multiple_choice') {
+        payload.choices = choices.filter(c => c.text.trim())
+      }
+      await onCreate(payload)
+      // reset
+      setText('')
+      setCorrectAnswer('')
+      setStdin('')
+      setSelectedTags([])
+      setChoices([{ text: '', is_correct: false }])
+      setError(null)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка при создании вопроса')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const toggleTag = (id) => setSelectedTags(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
-
-  const updateChoice = (idx, field, val) => setChoices(c => c.map((ch,i)=> i===idx ? { ...ch, [field]: val } : ch))
+  const toggleTag = (id) => setSelectedTags(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+  const updateChoice = (idx, field, val) => setChoices(c => c.map((ch, i) => i === idx ? { ...ch, [field]: val } : ch))
   const addChoice = () => setChoices(c => [...c, { text: '', is_correct: false }])
+  const removeChoice = (idx) => setChoices(c => c.filter((_, i) => i !== idx))
+
+  const questionTypeLabels = {
+    text: 'Свободный текст (открытый вопрос)',
+    single_choice: 'Выбор одного варианта',
+    multiple_choice: 'Выбор нескольких вариантов',
+    code: 'Написать код'
+  }
 
   return (
-    <form onSubmit={submit} style={{ display: 'grid', gap: '8px' }}>
-      <textarea className="form-input" placeholder="Текст вопроса" value={text} onChange={e=>setText(e.target.value)} required />
-      <select className="form-input" value={questionType} onChange={e=>setQuestionType(e.target.value)}>
-        <option value="text">Свободный текст</option>
-        <option value="single_choice">Выбор одного</option>
-        <option value="multiple_choice">Выбор нескольких</option>
-        <option value="code">Код</option>
-      </select>
-      <select className="form-input" value={complexity} onChange={e=>setComplexity(e.target.value)}>
-        <option value="easy">Легко</option>
-        <option value="medium">Средне</option>
-        <option value="hard">Сложно</option>
-      </select>
+    <form onSubmit={submit} style={{ display: 'grid', gap: '16px' }}>
+      <div>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Тип вопроса *</label>
+        <select
+          className="form-input"
+          value={questionType}
+          onChange={e => setQuestionType(e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <option value="text">📝 {questionTypeLabels.text}</option>
+          <option value="single_choice">✓ {questionTypeLabels.single_choice}</option>
+          <option value="multiple_choice">✓✓ {questionTypeLabels.multiple_choice}</option>
+          <option value="code">💻 {questionTypeLabels.code}</option>
+        </select>
+      </div>
+
+      <div>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Текст вопроса *</label>
+        <textarea
+          className="form-input"
+          placeholder="Сформулируйте вопрос..."
+          value={text}
+          onChange={e => setText(e.target.value)}
+          required
+          rows="3"
+          style={{ width: '100%', resize: 'vertical' }}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Сложность *</label>
+          <select
+            className="form-input"
+            value={complexity}
+            onChange={e => setComplexity(e.target.value)}
+            style={{ width: '100%' }}
+          >
+            <option value="easy">🟢 Легко</option>
+            <option value="medium">🟡 Средне</option>
+            <option value="hard">🔴 Сложно</option>
+          </select>
+        </div>
+      </div>
+
       {(questionType === 'text' || questionType === 'code') && (
-        <textarea className="form-input" placeholder="Правильный ответ (для автооценки)" value={correctAnswer} onChange={e=>setCorrectAnswer(e.target.value)} />
+        <div>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Правильный ответ (для проверки) *</label>
+          <textarea
+            className="form-input"
+            placeholder={questionType === 'code' ? 'Напишите правильный код...' : 'Напишите правильный ответ...'}
+            value={correctAnswer}
+            onChange={e => setCorrectAnswer(e.target.value)}
+            rows={questionType === 'code' ? 5 : 2}
+            style={{ width: '100%', resize: 'vertical', fontFamily: questionType === 'code' ? 'monospace' : 'inherit' }}
+          />
+        </div>
       )}
+
       {questionType === 'code' && (
-        <textarea className="form-input" placeholder="stdin (для кода)" value={stdin} onChange={e=>setStdin(e.target.value)} />
+        <div>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>Входные данные (stdin)</label>
+          <textarea
+            className="form-input"
+            placeholder="Примеры входных данных для тестирования кода..."
+            value={stdin}
+            onChange={e => setStdin(e.target.value)}
+            rows="2"
+            style={{ width: '100%', resize: 'vertical', fontFamily: 'monospace' }}
+          />
+        </div>
       )}
 
       {(questionType === 'single_choice' || questionType === 'multiple_choice') && (
         <div>
-          <div style={{ marginBottom: '8px' }}>Варианты ответа:</div>
-          {choices.map((ch, idx) => (
-            <div key={idx} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
-              <input className="form-input" style={{ flex: 1 }} value={ch.text} onChange={e=>updateChoice(idx, 'text', e.target.value)} placeholder={`Вариант ${idx+1}`} />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <input type={questionType === 'single_choice' ? 'radio' : 'checkbox'} checked={ch.is_correct} onChange={e=>{
-                  if (questionType === 'single_choice') {
-                    setChoices(c => c.map((x,i)=> ({ ...x, is_correct: i===idx })))
-                  } else {
-                    updateChoice(idx, 'is_correct', e.target.checked)
-                  }
-                }} /> Прав.
-              </label>
-            </div>
-          ))}
-          <button type="button" className="btn btn-outline" onClick={addChoice}>Добавить вариант</button>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Варианты ответа *</label>
+          <div style={{ display: 'grid', gap: '8px' }}>
+            {choices.map((ch, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  className="form-input"
+                  value={ch.text}
+                  onChange={e => updateChoice(idx, 'text', e.target.value)}
+                  placeholder={`Вариант ${idx + 1}`}
+                  style={{ flex: 1 }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontWeight: '500' }}>
+                  <input
+                    type={questionType === 'single_choice' ? 'radio' : 'checkbox'}
+                    name="correct"
+                    checked={ch.is_correct}
+                    onChange={e => {
+                      if (questionType === 'single_choice') {
+                        setChoices(c => c.map((x, i) => ({ ...x, is_correct: i === idx })))
+                      } else {
+                        updateChoice(idx, 'is_correct', e.target.checked)
+                      }
+                    }}
+                  />
+                  {questionType === 'single_choice' ? '✓' : '✓'}
+                </label>
+                {choices.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeChoice(idx)}
+                    style={{
+                      padding: '8px 12px',
+                      background: 'var(--border-light)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={addChoice}
+            style={{ marginTop: '8px', fontSize: '14px' }}
+          >
+            ➕ Добавить вариант
+          </button>
         </div>
       )}
 
-      <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '8px' }}>
-        <div style={{ marginBottom: '6px' }}>Теги:</div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {tags.map(t => (
-            <button type="button" key={t.id} className={`btn ${selectedTags.includes(t.id) ? 'btn-primary' : 'btn-outline'}`} onClick={()=>toggleTag(t.id)}>{t.name}</button>
-          ))}
-        </div>
+      <div>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Теги (для категоризации)</label>
+        {tags.length === 0 ? (
+          <div className="text-secondary" style={{ fontSize: '14px' }}>Нет доступных тегов</div>
+        ) : (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {tags.map(t => (
+              <button
+                type="button"
+                key={t.id}
+                onClick={() => toggleTag(t.id)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: selectedTags.includes(t.id) ? '2px solid var(--primary)' : '1px solid var(--border-light)',
+                  background: selectedTags.includes(t.id) ? 'var(--primary)' : 'transparent',
+                  color: selectedTags.includes(t.id) ? 'white' : 'var(--text)',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <button className="btn btn-primary" type="submit">Создать вопрос</button>
+      {error && (
+        <div style={{ padding: '12px', background: 'rgba(245, 87, 108, 0.1)', border: '1px solid #f5576c', borderRadius: 'var(--radius-sm)', color: '#f5576c', fontSize: '14px' }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      <button className="btn btn-primary" type="submit" disabled={loading}>
+        {loading ? '⏳ Создание...' : '✨ Создать вопрос'}
+      </button>
     </form>
   )
 }

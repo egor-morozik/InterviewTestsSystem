@@ -5,13 +5,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from interviewer_interface.models import Question
+
 from ..api.serializers import (
     InvitationSerializer,
     QuestionDetailSerializer,
     TestSessionSerializer,
 )
-from interviewer_interface.models import Question
-
 from ..models import Answer, Invitation
 
 
@@ -25,7 +25,9 @@ class TestSessionView(APIView):
             return Response({"error": "Приглашение не найдено"}, status=404)
 
         if invitation.completed:
-            return Response({"error": "Тест уже завершён", "completed": True}, status=400)
+            return Response(
+                {"error": "Тест уже завершён", "completed": True}, status=400
+            )
 
         template = invitation.test_template
         time_limit_seconds = template.time_limit * 60
@@ -42,7 +44,9 @@ class TestSessionView(APIView):
             if elapsed >= time_limit_seconds:
                 invitation.completed = True
                 invitation.save()
-                return Response({"error": "Время истекло", "completed": True}, status=400)
+                return Response(
+                    {"error": "Время истекло", "completed": True}, status=400
+                )
 
         serializer = TestSessionSerializer(invitation, context={"request": request})
         return Response(serializer.data)
@@ -60,28 +64,36 @@ class QuestionDetailView(APIView):
         if invitation.completed:
             return Response({"error": "Тест уже завершён"}, status=400)
 
-        template_questions = invitation.test_template.testtemplatequestion_set.all().order_by("order")
+        template_questions = (
+            invitation.test_template.testtemplatequestion_set.all().order_by("order")
+        )
         questions = [tq.question for tq in template_questions]
 
         try:
-            current_index = next(i for i, q in enumerate(questions) if q.id == question_id)
+            current_index = next(
+                i for i, q in enumerate(questions) if q.id == question_id
+            )
             current_question = questions[current_index]
         except StopIteration:
             return Response({"error": "Вопрос не найден в этом тесте"}, status=404)
 
         try:
-            current_answer = Answer.objects.get(invitation=invitation, question=current_question)
+            current_answer = Answer.objects.get(
+                invitation=invitation, question=current_question
+            )
         except Answer.DoesNotExist:
             current_answer = None
 
-        serializer = QuestionDetailSerializer({
-            "question": current_question,
-            "current_answer": current_answer,
-            "is_first": current_index == 0,
-            "is_last": current_index == len(questions) - 1,
-            "current_index": current_index + 1,
-            "total_questions": len(questions),
-        })
+        serializer = QuestionDetailSerializer(
+            {
+                "question": current_question,
+                "current_answer": current_answer,
+                "is_first": current_index == 0,
+                "is_last": current_index == len(questions) - 1,
+                "current_index": current_index + 1,
+                "total_questions": len(questions),
+            }
+        )
         return Response(serializer.data)
 
 

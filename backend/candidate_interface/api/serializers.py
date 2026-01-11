@@ -1,5 +1,6 @@
-from interviewer_interface.models import Choice, Question
 from rest_framework import serializers
+
+from interviewer_interface.models import Choice, Question
 
 from ..models import Answer, Invitation
 
@@ -80,7 +81,11 @@ class QuestionDetailSerializer(serializers.Serializer):
     def to_representation(self, instance):
         return {
             "question": QuestionSerializer(instance["question"]).data,
-            "current_answer": AnswerSerializer(instance["current_answer"]).data if instance.get("current_answer") else None,
+            "current_answer": (
+                AnswerSerializer(instance["current_answer"]).data
+                if instance.get("current_answer")
+                else None
+            ),
             "is_first": instance["is_first"],
             "is_last": instance["is_last"],
             "current_index": instance["current_index"],

@@ -5,10 +5,10 @@ from .admin_views import (
     CandidateListView,
     InvitationDetailView,
     InvitationListView,
-    TechLeadListView,
-    QuestionListCreateView,
     QuestionDetailView,
+    QuestionListCreateView,
     TagListCreateView,
+    TechLeadListView,
     TestTemplateAdminCreateView,
 )
 from .views import TestTemplateDetailView, TestTemplateListView
@@ -33,7 +33,15 @@ urlpatterns = [
     ),
     path("admin/tech-leads/", TechLeadListView.as_view(), name="admin_tech_leads"),
     path("admin/questions/", QuestionListCreateView.as_view(), name="admin_questions"),
-    path("admin/questions/<int:pk>/", QuestionDetailView.as_view(), name="admin_question_detail"),
+    path(
+        "admin/questions/<int:pk>/",
+        QuestionDetailView.as_view(),
+        name="admin_question_detail",
+    ),
     path("admin/tags/", TagListCreateView.as_view(), name="admin_tags"),
-    path("admin/templates/", TestTemplateAdminCreateView.as_view(), name="admin_template_create"),
+    path(
+        "admin/templates/",
+        TestTemplateAdminCreateView.as_view(),
+        name="admin_template_create",
+    ),
 ]

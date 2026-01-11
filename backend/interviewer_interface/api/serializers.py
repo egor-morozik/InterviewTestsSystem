@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import Question, Tag, TestTemplate, Choice
+from ..models import Choice, Question, Tag, TestTemplate
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -24,7 +24,9 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
-    tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    tag_ids = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
     choices = ChoiceSerializer(many=True, write_only=True, required=False)
 
     class Meta:
@@ -72,8 +74,12 @@ class TestTemplateCreateSerializer(serializers.ModelSerializer):
                 qid = item
             try:
                 q = Question.objects.get(id=qid)
-                TestTemplateQuestion = TestTemplate._meta.get_field("questions").remote_field.through
-                TestTemplateQuestion.objects.create(template=template, question=q, order=order)
+                TestTemplateQuestion = TestTemplate._meta.get_field(
+                    "questions"
+                ).remote_field.through
+                TestTemplateQuestion.objects.create(
+                    template=template, question=q, order=order
+                )
             except Question.DoesNotExist:
                 continue
             order += 1
