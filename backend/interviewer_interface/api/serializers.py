@@ -22,7 +22,7 @@ class TestTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TestTemplate
-        fields = ("id", "name", "test_type", "time_limit", "questions")
+        fields = ("id", "name", "description", "time_limit", "questions")
 
     def get_questions(self, obj):
         ordered = obj.testtemplatequestion_set.all().order_by("order")

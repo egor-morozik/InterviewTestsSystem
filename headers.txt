@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Server: nginx/1.29.4
+Date: Fri, 09 Jan 2026 14:46:05 GMT
+Content-Type: application/json
+Content-Length: 81
+Connection: keep-alive
+Vary: Cookie, origin
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+Cross-Origin-Opener-Policy: same-origin
+Set-Cookie: csrftoken=W2NxmYjVsTR7UVfFzAMiJ8h1wMdAmgm1; expires=Fri, 08 Jan 2027 14:46:05 GMT; Max-Age=31449600; Path=/; SameSite=Lax
+
