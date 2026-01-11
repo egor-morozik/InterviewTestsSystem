@@ -78,3 +78,34 @@ export const getTestTemplates = async () => {
   const response = await axios.get(`${API_BASE}/templates/`)
   return response.data
 }
+
+// Questions & Tags
+export const getQuestions = async () => {
+  await getCsrfToken()
+  const response = await axios.get(`${API_BASE}/admin/questions/`)
+  return response.data
+}
+
+export const createQuestion = async (data) => {
+  await getCsrfToken()
+  const response = await axios.post(`${API_BASE}/admin/questions/`, data)
+  return response.data
+}
+
+export const getTags = async () => {
+  await getCsrfToken()
+  const response = await axios.get(`${API_BASE}/admin/tags/`)
+  return response.data
+}
+
+export const createTag = async (data) => {
+  await getCsrfToken()
+  const response = await axios.post(`${API_BASE}/admin/tags/`, data)
+  return response.data
+}
+
+export const createTestTemplate = async (data) => {
+  await getCsrfToken()
+  const response = await axios.post(`${API_BASE}/admin/templates/`, data)
+  return response.data
+}

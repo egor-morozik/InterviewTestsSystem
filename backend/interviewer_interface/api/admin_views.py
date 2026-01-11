@@ -7,6 +7,14 @@ from candidate_interface.models import Candidate, Invitation
 from interviewer_interface.models import InterviewerUser, TestTemplate
 
 from .serializers import TestTemplateSerializer
+from .serializers import (
+    QuestionSerializer,
+    QuestionCreateSerializer,
+    TagSerializer,
+    TestTemplateCreateSerializer,
+)
+
+from ..models import Question, Tag, Choice, TestTemplate
 
 
 class AdminDashboardView(APIView):
@@ -274,3 +282,72 @@ class TechLeadListView(APIView):
             'last_name': tl.last_name,
         } for tl in tech_leads]
         return Response(data)
+
+
+class QuestionListCreateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        qs = Question.objects.all().order_by('-id')
+        serializer = QuestionSerializer(qs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = QuestionCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            q = serializer.save()
+            return Response(QuestionSerializer(q).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class QuestionDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get_object(self, pk):
+        try:
+            return Question.objects.get(id=pk)
+        except Question.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        q = self.get_object(pk)
+        if not q:
+            return Response({'error': 'Вопрос не найден'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(QuestionSerializer(q).data)
+
+    def patch(self, request, pk):
+        q = self.get_object(pk)
+        if not q:
+            return Response({'error': 'Вопрос не найден'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = QuestionCreateSerializer(q, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(QuestionSerializer(q).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TagListCreateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        tags = Tag.objects.all()
+        serializer = TagSerializer(tags, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TagSerializer(data=request.data)
+        if serializer.is_valid():
+            tag = serializer.save()
+            return Response(TagSerializer(tag).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TestTemplateAdminCreateView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = TestTemplateCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            tpl = serializer.save()
+            return Response(TestTemplateSerializer(tpl).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

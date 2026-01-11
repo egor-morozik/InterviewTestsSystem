@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react'
-import { getDashboard, getCandidates, getInvitations, createInvitation, getTestTemplates, getTechLeads } from '../api/adminApi'
+import {
+  getDashboard,
+  getCandidates,
+  getInvitations,
+  createInvitation,
+  getTestTemplates,
+  getTechLeads,
+  getQuestions,
+  createQuestion,
+  getTags,
+  createTestTemplate,
+} from '../api/adminApi'
 import CreateInvitationModal from '../components/CreateInvitationModal'
 
 function AdminPanel() {
@@ -8,6 +19,8 @@ function AdminPanel() {
   const [candidates, setCandidates] = useState([])
   const [invitations, setInvitations] = useState([])
   const [templates, setTemplates] = useState([])
+  const [questions, setQuestions] = useState([])
+  const [tags, setTags] = useState([])
   const [techLeads, setTechLeads] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -25,6 +38,13 @@ function AdminPanel() {
       if (activeTab === 'dashboard') {
         const data = await getDashboard()
         setDashboard(data)
+      } else if (activeTab === 'templates') {
+        const data = await getTestTemplates()
+        setTemplates(data)
+      } else if (activeTab === 'questions') {
+        const [qs, tg] = await Promise.all([getQuestions(), getTags()])
+        setQuestions(qs)
+        setTags(tg)
       } else if (activeTab === 'candidates') {
         const data = await getCandidates()
         setCandidates(data)
@@ -67,6 +87,19 @@ function AdminPanel() {
     return `${baseUrl}/interview/${uniqueLink}`
   }
 
+  const handleCreateQuestion = async (data) => {
+    await createQuestion(data)
+    // reload questions
+    const qs = await getQuestions()
+    setQuestions(qs)
+  }
+
+  const handleCreateTemplate = async (data) => {
+    await createTestTemplate(data)
+    const tpls = await getTestTemplates()
+    setTemplates(tpls)
+  }
+
   if (loading && !dashboard && !candidates.length && !invitations.length) {
     return <div className="loading">Загрузка...</div>
   }
@@ -87,6 +120,20 @@ function AdminPanel() {
             style={{ borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0', marginBottom: '-2px' }}
           >
             📊 Дашборд
+          </button>
+          <button
+            className={`btn ${activeTab === 'templates' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('templates')}
+            style={{ borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0', marginBottom: '-2px' }}
+          >
+            🧩 Шаблоны
+          </button>
+          <button
+            className={`btn ${activeTab === 'questions' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('questions')}
+            style={{ borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0', marginBottom: '-2px' }}
+          >
+            ❓ Вопросы
           </button>
           <button
             className={`btn ${activeTab === 'candidates' ? 'btn-primary' : 'btn-outline'}`}
@@ -287,6 +334,68 @@ function AdminPanel() {
             )}
           </div>
         )}
+
+        {/* Шаблоны */}
+        {activeTab === 'templates' && (
+          <div>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0 }}>Шаблоны тестов</h2>
+            </div>
+
+            {loading ? (
+              <div className="loading">Загрузка...</div>
+            ) : (
+              <div>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {templates.map((t) => (
+                    <div key={t.id} className="card" style={{ padding: '16px' }}>
+                      <h3 style={{ margin: '0 0 8px 0' }}>{t.name}</h3>
+                      <p className="text-secondary" style={{ margin: 0 }}>{t.description}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: '24px' }}>
+                  <h3>Создать шаблон</h3>
+                  <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Вопросы */}
+        {activeTab === 'questions' && (
+          <div>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0 }}>Вопросы</h2>
+            </div>
+
+            {loading ? (
+              <div className="loading">Загрузка...</div>
+            ) : (
+              <div>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {questions.map((q) => (
+                    <div key={q.id} className="card" style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div>
+                          <h3 style={{ margin: 0 }}>{q.text.slice(0, 120)}</h3>
+                          <div className="text-secondary">{q.question_type} • {q.complexity}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: '24px' }}>
+                  <h3>Создать вопрос</h3>
+                  <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Модальное окно создания приглашения */}
@@ -300,6 +409,141 @@ function AdminPanel() {
         />
       )}
     </div>
+  )
+}
+
+function CreateTemplateForm({ questions, onCreate }) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [timeLimit, setTimeLimit] = useState(0)
+  const [selected, setSelected] = useState([])
+
+  const toggle = (id) => {
+    setSelected((s) => (s.includes(id) ? s.filter(x => x!==id) : [...s, id]))
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    const payload = {
+      name,
+      description,
+      time_limit: Number(timeLimit) || 0,
+      questions: selected.map(id => ({ question_id: id })),
+    }
+    await onCreate(payload)
+    setName('')
+    setDescription('')
+    setTimeLimit(0)
+    setSelected([])
+  }
+
+  return (
+    <form onSubmit={submit} style={{ display: 'grid', gap: '8px' }}>
+      <input className="form-input" placeholder="Название" value={name} onChange={e=>setName(e.target.value)} required />
+      <textarea className="form-input" placeholder="Описание" value={description} onChange={e=>setDescription(e.target.value)} />
+      <input className="form-input" type="number" placeholder="Ограничение (мин)" value={timeLimit} onChange={e=>setTimeLimit(e.target.value)} />
+      <div style={{ maxHeight: '200px', overflow: 'auto', border: '1px solid var(--border-light)', padding: '8px' }}>
+        {questions.map(q => (
+          <label key={q.id} style={{ display: 'block', marginBottom: '6px' }}>
+            <input type="checkbox" checked={selected.includes(q.id)} onChange={()=>toggle(q.id)} /> {' '}
+            {q.text.slice(0,120)}
+          </label>
+        ))}
+      </div>
+      <button className="btn btn-primary" type="submit">Создать</button>
+    </form>
+  )
+}
+
+function CreateQuestionForm({ tags, onCreate }) {
+  const [text, setText] = useState('')
+  const [questionType, setQuestionType] = useState('text')
+  const [complexity, setComplexity] = useState('medium')
+  const [correctAnswer, setCorrectAnswer] = useState('')
+  const [stdin, setStdin] = useState('')
+  const [selectedTags, setSelectedTags] = useState([])
+  const [choices, setChoices] = useState([{ text: '', is_correct: false }])
+
+  const submit = async (e) => {
+    e.preventDefault()
+    const payload = {
+      text,
+      question_type: questionType,
+      complexity,
+      correct_answer: correctAnswer,
+      stdin,
+      tag_ids: selectedTags,
+    }
+    if (questionType === 'single_choice' || questionType === 'multiple_choice') {
+      payload.choices = choices.filter(c=>c.text.trim())
+    }
+    await onCreate(payload)
+    // reset
+    setText('')
+    setCorrectAnswer('')
+    setStdin('')
+    setSelectedTags([])
+    setChoices([{ text: '', is_correct: false }])
+  }
+
+  const toggleTag = (id) => setSelectedTags(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
+
+  const updateChoice = (idx, field, val) => setChoices(c => c.map((ch,i)=> i===idx ? { ...ch, [field]: val } : ch))
+  const addChoice = () => setChoices(c => [...c, { text: '', is_correct: false }])
+
+  return (
+    <form onSubmit={submit} style={{ display: 'grid', gap: '8px' }}>
+      <textarea className="form-input" placeholder="Текст вопроса" value={text} onChange={e=>setText(e.target.value)} required />
+      <select className="form-input" value={questionType} onChange={e=>setQuestionType(e.target.value)}>
+        <option value="text">Свободный текст</option>
+        <option value="single_choice">Выбор одного</option>
+        <option value="multiple_choice">Выбор нескольких</option>
+        <option value="code">Код</option>
+      </select>
+      <select className="form-input" value={complexity} onChange={e=>setComplexity(e.target.value)}>
+        <option value="easy">Легко</option>
+        <option value="medium">Средне</option>
+        <option value="hard">Сложно</option>
+      </select>
+      {(questionType === 'text' || questionType === 'code') && (
+        <textarea className="form-input" placeholder="Правильный ответ (для автооценки)" value={correctAnswer} onChange={e=>setCorrectAnswer(e.target.value)} />
+      )}
+      {questionType === 'code' && (
+        <textarea className="form-input" placeholder="stdin (для кода)" value={stdin} onChange={e=>setStdin(e.target.value)} />
+      )}
+
+      {(questionType === 'single_choice' || questionType === 'multiple_choice') && (
+        <div>
+          <div style={{ marginBottom: '8px' }}>Варианты ответа:</div>
+          {choices.map((ch, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
+              <input className="form-input" style={{ flex: 1 }} value={ch.text} onChange={e=>updateChoice(idx, 'text', e.target.value)} placeholder={`Вариант ${idx+1}`} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input type={questionType === 'single_choice' ? 'radio' : 'checkbox'} checked={ch.is_correct} onChange={e=>{
+                  if (questionType === 'single_choice') {
+                    setChoices(c => c.map((x,i)=> ({ ...x, is_correct: i===idx })))
+                  } else {
+                    updateChoice(idx, 'is_correct', e.target.checked)
+                  }
+                }} /> Прав.
+              </label>
+            </div>
+          ))}
+          <button type="button" className="btn btn-outline" onClick={addChoice}>Добавить вариант</button>
+        </div>
+      )}
+
+      <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '8px' }}>
+        <div style={{ marginBottom: '6px' }}>Теги:</div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {tags.map(t => (
+            <button type="button" key={t.id} className={`btn ${selectedTags.includes(t.id) ? 'btn-primary' : 'btn-outline'}`} onClick={()=>toggleTag(t.id)}>{t.name}</button>
+          ))}
+        </div>
+      </div>
+
+      <button className="btn btn-primary" type="submit">Создать вопрос</button>
+    </form>
   )
 }
 

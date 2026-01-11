@@ -18,6 +18,11 @@ jobs:
       with:
         python-version: '3.12'
     
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
     - name: Install backend dependencies & lint
       run: |
         cd backend
@@ -29,6 +34,12 @@ jobs:
         cd ai-service
         pip install -r requirements.txt black
         black . --check --diff
+    
+    - name: Install frontend dependencies & build
+      run: |
+        cd frontend
+        npm install --legacy-peer-deps
+        npm run build
 
   cd:
     needs: ci
@@ -65,3 +76,12 @@ jobs:
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-ai:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-ai:${{ github.sha }}
+    
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-frontend:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/interview-system-frontend:${{ github.sha }}
