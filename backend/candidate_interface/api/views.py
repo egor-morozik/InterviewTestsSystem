@@ -204,18 +204,26 @@ class TestResultsListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get all completed invitations (only HR can see all)
-        if request.user.is_hr:
+        # Get all completed invitations (HR, staff or Tech Lead can see)
+        if hasattr(request.user, 'is_hr') and request.user.is_hr:
+            # HR sees all results
+            invitations = Invitation.objects.filter(completed=True).select_related(
+                'candidate', 'test_template', 'assigned_tech_lead'
+            ).order_by('-id')
+        elif hasattr(request.user, 'is_tech_lead') and request.user.is_tech_lead:
+            # Tech Lead sees only assigned interviews
+            invitations = Invitation.objects.filter(
+                assigned_tech_lead=request.user,
+                completed=True
+            ).select_related('candidate', 'test_template').order_by('-id')
+        elif request.user.is_staff:
+            # Staff members can see all results
             invitations = Invitation.objects.filter(completed=True).select_related(
                 'candidate', 'test_template', 'assigned_tech_lead'
             ).order_by('-id')
         else:
-            # Tech Lead sees only assigned interviews
-            invitations = Invitation.objects.filter(
-                assigned_tech_lead=request.user,
-                completed=True,
-                interview_type='technical'
-            ).select_related('candidate', 'test_template').order_by('-id')
+            # Other users see no results
+            invitations = Invitation.objects.none()
 
         results = []
         for invitation in invitations:
@@ -252,8 +260,8 @@ class TestResultDetailView(APIView):
         except Invitation.DoesNotExist:
             return Response({"error": "Тест не найден"}, status=404)
 
-        # Check permissions
-        if not request.user.is_hr:
+        # Check permissions - allow staff/hr users
+        if not (request.user.is_staff or request.user.is_hr):
             if invitation.interview_type == 'technical':
                 if request.user != invitation.assigned_tech_lead:
                     return Response({"error": "Доступ запрещён"}, status=403)
@@ -308,8 +316,8 @@ class QuestionFeedbackView(APIView):
         except Invitation.DoesNotExist:
             return Response({"error": "Тест не найден"}, status=404)
 
-        # Check permissions
-        if not request.user.is_hr:
+        # Check permissions - allow staff/hr users
+        if not (request.user.is_staff or request.user.is_hr):
             if invitation.interview_type == 'technical':
                 if request.user != invitation.assigned_tech_lead:
                     return Response({"error": "Доступ запрещён"}, status=403)

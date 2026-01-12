@@ -1090,7 +1090,7 @@ function ResultsDetailView({ result, onBack, onSaveScore }) {
   const loadDetail = async () => {
     try {
       setLoading(true)
-      const data = await getTestResultDetail(result)
+      const data = await getTestResultDetail(result.id)
       setDetail(data)
     } catch (err) {
       setError('Ошибка загрузки результатов')
@@ -1101,7 +1101,7 @@ function ResultsDetailView({ result, onBack, onSaveScore }) {
 
   const handleSaveScore = async (questionId, score) => {
     try {
-      await saveQuestionFeedback(result, questionId, score, '')
+      await saveQuestionFeedback(result.id, questionId, score, '')
       // Обновляем локальное состояние
       setDetail(prev => ({
         ...prev,
