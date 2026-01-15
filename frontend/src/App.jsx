@@ -9,36 +9,30 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={
-          <div className="container fade-in">
-            <div className="card" style={{ textAlign: 'center', maxWidth: '700px', margin: '120px auto', padding: '64px 48px' }}>
-              <div style={{
-                fontSize: '72px',
-                marginBottom: '24px',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                width: '140px',
-                height: '140px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 32px',
-                boxShadow: '0 12px 40px rgba(99, 102, 241, 0.4)'
-              }}>
-                <span>📝</span>
-              </div>
-              <h1 style={{ marginBottom: '20px' }}>Interview Tests System</h1>
-              <p className="text-secondary" style={{ marginTop: '16px', marginBottom: '40px', fontSize: '18px', lineHeight: '1.6' }}>
-                Система для проведения интервью и тестирования кандидатов
-              </p>
-              <div className="success" style={{ textAlign: 'left', marginTop: '32px' }}>
-                <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-                  💡 Используйте ссылку из приглашения для прохождения теста или интервью
+          <div className="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-white">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="w-full max-w-2xl bg-white rounded-lg shadow-card p-16">
+                <div className="flex justify-center mb-8">
+                  <div className="w-32 h-32 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-2xl font-bold text-white">ITS</span>
+                  </div>
+                </div>
+                <h1 className="text-4xl font-extrabold text-center text-secondary mb-4">
+                  Interview Tests System
+                </h1>
+                <p className="text-center text-secondary-light text-lg mb-8 leading-relaxed">
+                  Система для проведения интервью и тестирования кандидатов
                 </p>
-              </div>
-              <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                <a href="/admin-panel" className="btn btn-primary" style={{ textDecoration: 'none', display: 'inline-block' }}>
-                  🎛️ Панель управления
-                </a>
+                <div className="bg-primary-light border-l-4 border-primary rounded p-4 mb-8">
+                  <p className="text-secondary text-base">
+                    INFO: Используйте ссылку из приглашения для прохождения теста или интервью
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <a href="/admin-panel" className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white font-medium rounded hover:opacity-90 transition-opacity">
+                    Панель управления
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -49,16 +43,14 @@ function App() {
         <Route path="/completed/:uniqueLink" element={<TestCompleted />} />
         <Route path="/admin-panel" element={<AdminPanel />} />
         <Route path="*" element={
-          <div className="container fade-in">
-            <div className="card" style={{ textAlign: 'center', maxWidth: '600px', margin: '120px auto', padding: '64px 48px' }}>
-              <div style={{
-                fontSize: '80px',
-                marginBottom: '24px'
-              }}>🔍</div>
-              <h1 style={{ marginBottom: '16px' }}>404</h1>
-              <p className="text-secondary" style={{ marginTop: '16px', fontSize: '18px' }}>
-                Страница не найдена
-              </p>
+          <div className="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-white">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="w-full max-w-xl bg-white rounded-lg shadow-card p-16 text-center">
+                <h1 className="text-6xl font-extrabold text-secondary mb-4">404</h1>
+                <p className="text-secondary-light text-lg">
+                  Страница не найдена
+                </p>
+              </div>
             </div>
           </div>
         } />

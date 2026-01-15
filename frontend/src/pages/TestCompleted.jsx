@@ -22,49 +22,24 @@ function TestCompleted() {
     }
   }
 
-  if (loading) return <div className="loading">Загрузка...</div>
+  if (loading) return <div className="flex items-center justify-center min-h-screen text-secondary">Загрузка...</div>
 
   return (
-    <div className="container fade-in">
-      <div className="card" style={{ textAlign: 'center', maxWidth: '600px', margin: '80px auto', padding: '48px' }}>
-        <div style={{ 
-          fontSize: '80px', 
-          marginBottom: '24px',
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          width: '120px',
-          height: '120px',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 32px',
-          boxShadow: '0 8px 24px rgba(16, 185, 129, 0.3)',
-          animation: 'scaleIn 0.5s ease-out'
-        }}>
-          <span style={{ color: 'white', fontSize: '60px' }}>✓</span>
+    <div className="min-h-screen bg-background fade-in p-6">
+      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-card p-12 text-center">
+        <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg animate-pulse">
+          <span className="text-6xl text-white">✓</span>
         </div>
-        <h1 style={{ marginBottom: '16px' }}>Тест завершён</h1>
-        <p className="text-secondary" style={{ fontSize: '18px', marginTop: '16px', marginBottom: '32px', fontWeight: '500' }}>
+        <h1 className="text-3xl font-bold text-secondary mb-2">Тест завершён</h1>
+        <p className="text-lg text-secondary-light font-medium mt-4 mb-8">
           {session?.candidate_name ? `Спасибо, ${session.candidate_name}!` : 'Спасибо!'}
         </p>
-        <div className="success" style={{ marginBottom: '32px' }}>
-          <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+          <p className="text-secondary font-medium leading-relaxed">
             Ваши ответы сохранены. Результаты будут отправлены вам по email.
           </p>
         </div>
       </div>
-      <style>{`
-        @keyframes scaleIn {
-          from {
-            transform: scale(0);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   )
 }

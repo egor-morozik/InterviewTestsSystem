@@ -93,90 +93,51 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div className="card fade-in" style={{
-        maxWidth: '600px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        position: 'relative'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ margin: 0 }}>➕ Создать приглашение</h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-1000 p-5">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-secondary m-0">➕ Создать приглашение</h2>
           <button
-            className="btn btn-outline"
+            className="px-3 py-1 text-xl text-secondary-light hover:text-secondary"
             onClick={onClose}
-            style={{ padding: '8px 16px', fontSize: '18px' }}
           >
             ✕
           </button>
         </div>
 
         {/* Индикатор шагов */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-          <div style={{
-            flex: 1,
-            padding: '8px',
-            borderRadius: 'var(--radius-sm)',
-            background: step >= 1 ? 'var(--primary-gradient)' : 'var(--border-light)',
-            color: step >= 1 ? 'white' : 'var(--text-secondary)',
-            textAlign: 'center',
-            fontSize: '12px',
-            fontWeight: '600'
-          }}>
+        <div className="flex gap-2 mb-6">
+          <div className={`flex-1 px-4 py-2 rounded text-xs font-semibold text-center text-white ${step >= 1 ? 'bg-primary' : 'bg-border text-secondary-light'}`}>
             Шаг 1: Кандидат
           </div>
-          <div style={{
-            flex: 1,
-            padding: '8px',
-            borderRadius: 'var(--radius-sm)',
-            background: step >= 2 ? 'var(--primary-gradient)' : 'var(--border-light)',
-            color: step >= 2 ? 'white' : 'var(--text-secondary)',
-            textAlign: 'center',
-            fontSize: '12px',
-            fontWeight: '600'
-          }}>
+          <div className={`flex-1 px-4 py-2 rounded text-xs font-semibold text-center text-white ${step >= 2 ? 'bg-primary' : 'bg-border text-secondary-light'}`}>
             Шаг 2: Тест
           </div>
         </div>
 
-        {error && <div className="error" style={{ marginBottom: '16px' }}>{error}</div>}
+        {error && <div className="p-4 mb-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
 
         {/* Шаг 1: Выбор кандидата */}
         {step === 1 && (
           <div>
-            <div className="form-group">
-              <label className="form-label">Выберите способ:</label>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <div className="mb-6">
+              <label className="block text-secondary font-medium mb-4">Выберите способ:</label>
+              <div className="flex gap-3 mb-4">
                 <button
-                  className={`btn ${!createNewCandidate ? 'btn-primary' : 'btn-outline'}`}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${!createNewCandidate ? 'bg-primary text-white' : 'bg-border text-secondary-light hover:bg-gray-100'}`}
                   onClick={() => {
                     setCreateNewCandidate(false)
                     setError(null)
                   }}
-                  style={{ flex: 1 }}
                 >
                   Выбрать существующего
                 </button>
                 <button
-                  className={`btn ${createNewCandidate ? 'btn-primary' : 'btn-outline'}`}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${createNewCandidate ? 'bg-primary text-white' : 'bg-border text-secondary-light hover:bg-gray-100'}`}
                   onClick={() => {
                     setCreateNewCandidate(true)
                     setError(null)
                   }}
-                  style={{ flex: 1 }}
                 >
                   Создать нового
                 </button>
@@ -184,10 +145,10 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
             </div>
 
             {!createNewCandidate ? (
-              <div className="form-group">
-                <label className="form-label">Кандидат:</label>
+              <div className="mb-6">
+                <label className="block text-secondary font-medium mb-2">Кандидат:</label>
                 <select
-                  className="form-input"
+                  className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
                   value={selectedCandidateId}
                   onChange={(e) => {
                     setSelectedCandidateId(e.target.value)
@@ -204,21 +165,21 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
               </div>
             ) : (
               <div>
-                <div className="form-group">
-                  <label className="form-label">Email кандидата:</label>
+                <div className="mb-6">
+                  <label className="block text-secondary font-medium mb-2">Email кандидата:</label>
                   <input
                     type="email"
-                    className="form-input"
+                    className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
                     value={newCandidate.email}
                     onChange={(e) => setNewCandidate({ ...newCandidate, email: e.target.value })}
                     placeholder="example@email.com"
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">ФИО кандидата:</label>
+                <div className="mb-6">
+                  <label className="block text-secondary font-medium mb-2">ФИО кандидата:</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
                     value={newCandidate.full_name}
                     onChange={(e) => setNewCandidate({ ...newCandidate, full_name: e.target.value })}
                     placeholder="Иванов Иван Иванович"
@@ -232,10 +193,10 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
         {/* Шаг 2: Выбор теста */}
         {step === 2 && (
           <div>
-            <div className="form-group">
-              <label className="form-label">Шаблон теста:</label>
+            <div className="mb-6">
+              <label className="block text-secondary font-medium mb-2">Шаблон теста:</label>
               <select
-                className="form-input"
+                className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
                 value={selectedTemplateId}
                 onChange={(e) => {
                   setSelectedTemplateId(e.target.value)
@@ -251,23 +212,21 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Тип собеседования:</label>
-              <div style={{ display: 'flex', gap: '12px' }}>
+            <div className="mb-6">
+              <label className="block text-secondary font-medium mb-4">Тип собеседования:</label>
+              <div className="flex gap-3">
                 <button
-                  className={`btn ${selectedInterviewType === 'general' ? 'btn-primary' : 'btn-outline'}`}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${selectedInterviewType === 'general' ? 'bg-primary text-white' : 'bg-border text-secondary-light hover:bg-gray-100'}`}
                   onClick={() => {
                     setSelectedInterviewType('general')
                     setSelectedTechLeadId('')
                   }}
-                  style={{ flex: 1 }}
                 >
                   📋 Общий тест (HR)
                 </button>
                 <button
-                  className={`btn ${selectedInterviewType === 'technical' ? 'btn-primary' : 'btn-outline'}`}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${selectedInterviewType === 'technical' ? 'bg-primary text-white' : 'bg-border text-secondary-light hover:bg-gray-100'}`}
                   onClick={() => setSelectedInterviewType('technical')}
-                  style={{ flex: 1 }}
                 >
                   💻 Техническое (Tech Lead)
                 </button>
@@ -275,10 +234,10 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
             </div>
 
             {selectedInterviewType === 'technical' && (
-              <div className="form-group">
-                <label className="form-label">Назначить Tech Lead (необязательно):</label>
+              <div className="mb-6">
+                <label className="block text-secondary font-medium mb-2">Назначить Tech Lead (необязательно):</label>
                 <select
-                  className="form-input"
+                  className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
                   value={selectedTechLeadId}
                   onChange={(e) => setSelectedTechLeadId(e.target.value)}
                 >
@@ -295,19 +254,17 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
         )}
 
         {/* Кнопки */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+        <div className="flex gap-3 mt-8">
           <button
-            className="btn btn-outline"
+            className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all border border-border text-secondary-light hover:bg-gray-50 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={step === 1 ? onClose : () => setStep(1)}
-            style={{ flex: 1 }}
             disabled={loading}
           >
             {step === 1 ? 'Отмена' : 'Назад'}
           </button>
           <button
-            className="btn btn-primary"
+            className={`flex-1 px-4 py-3 rounded-lg font-medium text-white bg-primary hover:opacity-90 transition-all ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleNext}
-            style={{ flex: 1 }}
             disabled={loading}
           >
             {loading ? 'Сохранение...' : step === 1 ? 'Далее →' : '✅ Создать'}

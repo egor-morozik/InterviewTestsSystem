@@ -138,82 +138,48 @@ function TechnicalInterview() {
     sendCodeUpdate(newCode)
   }
 
-  const currentQuestion = session?.questions?.find(q => (q.id || q.question__id) === currentQuestionId) || 
-    session?.questions?.find((q, idx) => idx === 0)
-
-  if (loading) return <div className="loading">Загрузка...</div>
-  if (error) return <div className="error">{error}</div>
+  if (loading) return <div className="flex items-center justify-center min-h-screen text-secondary">Загрузка...</div>
+  if (error) return <div className="flex items-center justify-center min-h-screen bg-red-100 border border-red-400 text-red-700 rounded p-4">{error}</div>
   if (!session) return null
 
   return (
-    <div className="container fade-in">
-      <div className="card">
-        <div className="card-header">
+    <div className="min-h-screen bg-background fade-in p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-card p-8">
+        <div className="flex justify-between items-start mb-8 pb-6 border-b border-border">
           <div>
-            <h1 style={{ marginBottom: '8px' }}>💻 Техническое собеседование</h1>
-            <p className="text-secondary" style={{ fontSize: '15px', fontWeight: '500' }}>
+            <h1 className="text-3xl font-bold text-secondary mb-2">💻 Техническое собеседование</h1>
+            <p className="text-secondary-light font-medium">
               👤 Кандидат: {session.candidate_name} | 📋 Шаблон: {session.template_name}
             </p>
           </div>
-          <div className="flex gap-2" style={{ alignItems: 'center', padding: '8px 16px', borderRadius: 'var(--radius)', background: isConnected ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', border: `2px solid ${isConnected ? '#10b981' : '#ef4444'}` }}>
-            <div style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: isConnected ? '#10b981' : '#ef4444',
-              boxShadow: isConnected ? '0 0 8px rgba(16, 185, 129, 0.6)' : '0 0 8px rgba(239, 68, 68, 0.6)',
-              animation: isConnected ? 'pulse 2s ease-in-out infinite' : 'none'
-            }}></div>
-            <span style={{ fontWeight: '600', color: isConnected ? '#065f46' : '#991b1b' }}>
-              {isConnected ? 'Подключено' : 'Отключено'}
-            </span>
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold border-2 ${isConnected ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700'}`}>
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+            <span>{isConnected ? 'Подключено' : 'Отключено'}</span>
           </div>
         </div>
 
-        <div className="interview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
-          {/* Левая колонка - Вопросы и Код */}
+        <div className="grid grid-cols-2 gap-6 mt-6">
           <div>
-            {/* Список вопросов */}
-            <div className="card mb-2 slide-in">
-              <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="bg-white rounded-lg shadow-card p-6 mb-6 border border-border">
+              <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-secondary">
                 <span>📝</span>
                 <span>Вопросы</span>
               </h3>
-              <div style={{ maxHeight: '220px', overflowY: 'auto', paddingRight: '8px' }}>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
                 {session.questions?.map((q, idx) => (
                   <div
                     key={q.id || idx}
                     onClick={() => setCurrentQuestionId(q.id)}
-                    className="slide-in"
-                    style={{
-                      padding: '16px',
-                      marginBottom: '12px',
-                      border: currentQuestionId === q.id ? '2px solid var(--primary)' : '2px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer',
-                      background: currentQuestionId === q.id 
-                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)' 
-                        : 'var(--surface-elevated)',
-                      transition: 'all 0.3s ease',
-                      boxShadow: currentQuestionId === q.id ? '0 4px 12px rgba(99, 102, 241, 0.2)' : '0 2px 4px var(--shadow)'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentQuestionId !== q.id) {
-                        e.currentTarget.style.transform = 'translateX(4px)'
-                        e.currentTarget.style.boxShadow = '0 4px 8px var(--shadow-md)'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (currentQuestionId !== q.id) {
-                        e.currentTarget.style.transform = 'translateX(0)'
-                        e.currentTarget.style.boxShadow = '0 2px 4px var(--shadow)'
-                      }
-                    }}
+                    className={`p-4 rounded-lg cursor-pointer transition-all border-2 ${
+                      currentQuestionId === q.id 
+                        ? 'border-primary bg-blue-50 shadow-md' 
+                        : 'border-border bg-white hover:border-primary hover:shadow-sm'
+                    }`}
                   >
-                    <strong style={{ color: currentQuestionId === q.id ? 'var(--primary)' : 'var(--text)' }}>
+                    <strong className={currentQuestionId === q.id ? 'text-primary' : 'text-secondary'}>
                       Вопрос {idx + 1}
                     </strong>
-                    <p className="text-secondary" style={{ fontSize: '14px', marginTop: '6px', lineHeight: '1.5' }}>
+                    <p className="text-sm text-secondary-light mt-1 line-clamp-2">
                       {(q.text || '').substring(0, 60)}{(q.text || '').length > 60 ? '...' : ''}
                     </p>
                   </div>
@@ -221,58 +187,38 @@ function TechnicalInterview() {
               </div>
             </div>
 
-            {/* Текущий вопрос */}
-            {currentQuestion && (
-              <div className="card mb-2 slide-in" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '2px solid var(--border-light)' }}>
-                <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>❓</span>
-                  <span>Текущий вопрос</span>
-                </h3>
-                <p style={{ lineHeight: '1.7', fontSize: '15px', marginBottom: '16px' }}>
-                  {currentQuestion.text || currentQuestion.question__text || 'Вопрос не выбран'}
-                </p>
-                {currentQuestion.stdin && (
-                  <div className="code-block mt-2">
-                    <strong>Входные данные:</strong>
-                    <pre>{currentQuestion.stdin}</pre>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Редактор кода */}
-            <div className="card slide-in">
-              <div className="flex-between mb-3">
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <div className="bg-white rounded-lg shadow-card p-6 border border-border">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="flex items-center gap-2 text-lg font-bold text-secondary">
                   <span>💻</span>
                   <span>Код</span>
                 </h3>
-                <button className="btn btn-primary" onClick={runCode} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white bg-primary hover:opacity-90 transition-all" onClick={runCode}>
                   <span>▶</span>
                   <span>Запустить</span>
                 </button>
               </div>
               <textarea
-                className="form-textarea code"
+                className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary resize-none font-mono text-sm"
+                style={{ minHeight: '350px' }}
                 value={code}
                 onChange={(e) => handleCodeChange(e.target.value)}
                 placeholder="Начните писать код на Python 3..."
-                style={{ minHeight: '350px', fontFamily: 'monospace', fontSize: '14px' }}
               />
               
               {codeOutput && (
-                <div className="mt-3 fade-in">
+                <div className="mt-4">
                   {codeOutput.stderr ? (
-                    <div className="error">
-                      <strong>❌ Ошибка:</strong>
-                      <pre style={{ marginTop: '12px', fontSize: '13px', lineHeight: '1.6' }}>{codeOutput.stderr}</pre>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <strong className="text-red-700 text-sm">❌ Ошибка:</strong>
+                      <pre className="text-xs text-red-600 mt-3 font-mono overflow-x-auto leading-relaxed">{codeOutput.stderr}</pre>
                     </div>
                   ) : (
-                    <div className="success">
-                      <strong>✅ Вывод:</strong>
-                      <pre style={{ marginTop: '12px', fontSize: '13px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{codeOutput.stdout || '(пусто)'}</pre>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <strong className="text-green-700 text-sm">✅ Вывод:</strong>
+                      <pre className="text-xs text-green-600 mt-3 font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap">{codeOutput.stdout || '(пусто)'}</pre>
                       {codeOutput.time && (
-                        <p className="text-secondary" style={{ marginTop: '12px', fontSize: '13px', fontWeight: '600' }}>
+                        <p className="text-green-600 text-xs mt-3 font-semibold">
                           ⏱ Время выполнения: {codeOutput.time}
                         </p>
                       )}
@@ -283,27 +229,17 @@ function TechnicalInterview() {
             </div>
           </div>
 
-          {/* Правая колонка - Чат */}
           <div>
-            <div className="card slide-in" style={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="bg-white rounded-lg shadow-card p-6 border border-border flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
+              <h3 className="flex items-center gap-2 text-lg font-bold text-secondary mb-4">
                 <span>💬</span>
                 <span>Чат</span>
               </h3>
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                marginBottom: '20px',
-                padding: '16px',
-                background: 'var(--surface)',
-                borderRadius: 'var(--radius-sm)',
-                minHeight: '400px',
-                border: '2px solid var(--border-light)'
-              }}>
+              <div className="flex-1 overflow-y-auto mb-4 p-4 bg-white rounded-lg border-2 border-border min-h-96">
                 {messages.length === 0 ? (
-                  <div style={{ textAlign: 'center', marginTop: '60px', opacity: 0.6 }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-                    <p className="text-secondary" style={{ fontSize: '15px', fontWeight: '500' }}>
+                  <div className="text-center mt-20 opacity-60">
+                    <div className="text-4xl mb-4">💬</div>
+                    <p className="text-secondary font-medium">
                       Нет сообщений. Начните общение!
                     </p>
                   </div>
@@ -311,40 +247,30 @@ function TechnicalInterview() {
                   messages.map((msg, idx) => (
                     <div
                       key={idx}
-                      className="fade-in"
-                      style={{
-                        marginBottom: '16px',
-                        padding: '14px 16px',
-                        background: msg.sender === 'interviewer' 
-                          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                          : 'var(--surface-elevated)',
-                        color: msg.sender === 'interviewer' ? 'white' : 'var(--text)',
-                        borderRadius: 'var(--radius-sm)',
-                        marginLeft: msg.sender === 'candidate' ? '24px' : '0',
-                        marginRight: msg.sender === 'interviewer' ? '24px' : '0',
-                        boxShadow: '0 2px 8px var(--shadow)',
-                        border: msg.sender === 'candidate' ? '2px solid var(--border-light)' : 'none'
-                      }}
+                      className={`mb-4 p-3 rounded-lg ${
+                        msg.sender === 'interviewer' 
+                          ? 'bg-blue-500 text-white ml-6' 
+                          : 'bg-gray-100 text-secondary mr-6'
+                      }`}
                     >
-                      <div style={{ fontSize: '12px', opacity: msg.sender === 'interviewer' ? '0.9' : '0.7', marginBottom: '6px', fontWeight: '600' }}>
+                      <div className="text-xs font-semibold mb-1 opacity-75">
                         {msg.sender === 'interviewer' ? '👨‍💼 Tech Lead' : '👤 Кандидат'}
                       </div>
-                      <div style={{ lineHeight: '1.6', fontSize: '14px' }}>{msg.message}</div>
+                      <div className="text-sm leading-relaxed">{msg.message}</div>
                     </div>
                   ))
                 )}
               </div>
               <div className="flex gap-2">
                 <input
-                  className="form-input"
+                  className="flex-1 px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
                   type="text"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   placeholder="Введите сообщение..."
-                  style={{ flex: 1 }}
                 />
-                <button className="btn btn-primary" onClick={sendMessage} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button className="flex items-center gap-2 px-4 py-3 rounded-lg font-medium text-white bg-primary hover:opacity-90 transition-all" onClick={sendMessage}>
                   <span>📤</span>
                   <span>Отправить</span>
                 </button>

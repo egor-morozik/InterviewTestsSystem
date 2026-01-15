@@ -3,6 +3,9 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 
 from .models import Choice, Question, Tag, TestTemplate, TestTemplateQuestion
+from .models import InterviewerUser
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
 
 
 class ChoiceInline(admin.TabularInline):
@@ -92,3 +95,17 @@ class QuestionAdmin(admin.ModelAdmin):
     text_truncated.short_description = "Вопрос"
     answer_truncated.short_description = "Правильный ответ"
     tags_list.short_description = "Теги"
+
+
+# Register InterviewerUser with role flags editable
+@admin.register(InterviewerUser)
+class InterviewerUserAdmin(UserAdmin):
+    list_display = ("username", "email", "is_hr", "is_tech_lead", "is_staff", "is_superuser")
+    list_filter = ("is_hr", "is_tech_lead", "is_staff")
+    search_fields = ("username", "email")
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "email")} ),
+        ("Roles", {"fields": ("is_hr", "is_tech_lead", "is_staff", "is_superuser")} ),
+        ("Permissions", {"fields": ("is_active", "groups", "user_permissions")} ),
+    )

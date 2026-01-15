@@ -10,9 +10,11 @@ from .admin_views import (
     QuestionListCreateView,
     TagListCreateView,
     TechLeadListView,
+    UserListView,
+    UserDetailView,
     TestTemplateAdminCreateView,
 )
-from .views import TestTemplateDetailView, TestTemplateListView
+from .views import TestTemplateDetailView, TestTemplateListView, CurrentUserView
 
 urlpatterns = [
     path(
@@ -49,5 +51,12 @@ urlpatterns = [
         "admin/generate-question/",
         GenerateQuestionView.as_view(),
         name="admin_generate_question",
+    ),
+    path("admin/users/", UserListView.as_view(), name="admin_users"),
+    path("admin/users/<int:pk>/", UserDetailView.as_view(), name="admin_user_detail"),
+    path(
+        "me/",
+        CurrentUserView.as_view(),
+        name="current_user",
     ),
 ]

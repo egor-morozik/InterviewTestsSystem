@@ -151,8 +151,8 @@ function TestPage() {
     }
   }
 
-  if (loading) return <div className="loading">Загрузка...</div>
-  if (error) return <div className="error">{error}</div>
+  if (loading) return <div className="flex items-center justify-center min-h-screen text-secondary">Загрузка...</div>
+  if (error) return <div className="flex items-center justify-center min-h-screen bg-red-100 border border-red-400 text-red-700 rounded p-4">{error}</div>
   if (!session || !question) return null
 
   const currentIndex = session.questions.findIndex(q => q.id === parseInt(questionId))
@@ -166,52 +166,53 @@ function TestPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const getTimerClass = () => {
-    if (remainingTime === null) return 'timer'
-    if (remainingTime < 60) return 'timer danger'
-    if (remainingTime < 300) return 'timer warning'
-    return 'timer'
+  const getTimerColor = () => {
+    if (remainingTime === null) return 'text-secondary'
+    if (remainingTime < 60) return 'text-red-600 font-bold'
+    if (remainingTime < 300) return 'text-yellow-600 font-bold'
+    return 'text-secondary'
   }
 
   return (
-    <div className="container fade-in">
-      <div className="card">
-        <div className="card-header">
+    <div className="min-h-screen bg-background fade-in p-6">
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-card p-8">
+        <div className="flex justify-between items-start mb-8 pb-6 border-b border-border">
           <div>
-            <h1 style={{ marginBottom: '8px' }}>{session.template_name}</h1>
-            <p className="text-secondary" style={{ fontSize: '15px', fontWeight: '500' }}>
+            <h1 className="text-3xl font-bold text-secondary mb-2">{session.template_name}</h1>
+            <p className="text-secondary-light font-medium">
               👤 Кандидат: {session.candidate_name}
             </p>
           </div>
           {remainingTime !== null && (
-            <div className={getTimerClass()}>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${getTimerColor()} bg-gray-100`}>
               <span>⏱</span>
               <span>{formatTime(remainingTime)}</span>
             </div>
           )}
         </div>
 
-        <div className="mb-3">
-          <div className="flex-between mb-2">
-            <span className="text-secondary" style={{ fontWeight: '600', fontSize: '15px' }}>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-secondary font-semibold">
               Вопрос {currentIndex + 1} из {session.questions.length}
             </span>
-            <span className="text-secondary" style={{ fontWeight: '600', fontSize: '15px' }}>
+            <span className="text-secondary font-semibold">
               {Math.round(progress)}%
             </span>
           </div>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+          <div className="w-full bg-border rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
           </div>
         </div>
 
-        <div className="card" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '2px solid var(--border-light)' }}>
-          <h2 style={{ marginBottom: '24px', lineHeight: '1.4' }}>{question?.text}</h2>
+        <div className="bg-gradient-to-br from-white to-bg-light border-2 border-border rounded-lg p-8 mb-8">
+          <h2 className="text-xl font-bold text-secondary mb-6 leading-relaxed">{question?.text}</h2>
 
           {question?.question_type === 'text' && (
-            <div className="form-group">
+            <div className="mb-6">
               <textarea
-                className="form-textarea"
+                className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary resize-none"
+                rows="6"
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Введите ваш ответ"
@@ -221,57 +222,59 @@ function TestPage() {
 
           {question?.question_type === 'code' && (
             <div>
-              <div className="form-group">
+              <div className="mb-6">
                 <textarea
-                  className="form-textarea code"
+                  className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary resize-none font-mono text-sm"
+                  rows="8"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   placeholder="Введите ваш код на Python 3"
                 />
               </div>
               {question.stdin && (
-                <div className="code-block">
-                  <strong>Входные данные:</strong>
-                  <pre>{question.stdin}</pre>
+                <div className="bg-gray-50 border border-border rounded-lg p-4 mb-6">
+                  <strong className="text-secondary">Входные данные:</strong>
+                  <pre className="text-sm text-secondary-light mt-2 font-mono overflow-x-auto">{question.stdin}</pre>
                 </div>
               )}
             </div>
           )}
 
           {(question?.question_type === 'single_choice' || question?.question_type === 'multiple_choice') && (
-            <div className="form-group">
+            <div className="space-y-3">
               {question?.choices?.map((choice) => (
-                <label key={choice.id} className="choice-item">
+                <label key={choice.id} className="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:bg-bg-light transition-colors">
                   <input
                     type={question.question_type === 'multiple_choice' ? 'checkbox' : 'radio'}
                     checked={selectedChoices.includes(choice.id)}
                     onChange={() => handleChoiceChange(choice.id, question.question_type === 'multiple_choice')}
                     name="choice"
+                    className="w-5 h-5 text-primary cursor-pointer"
                   />
-                  <span>{choice.text}</span>
+                  <span className="ml-3 text-secondary font-medium">{choice.text}</span>
                 </label>
               ))}
             </div>
           )}
         </div>
 
-        <div className="flex-between" style={{ marginTop: '32px', paddingTop: '24px', borderTop: '2px solid var(--border-light)' }}>
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
           <div>
             {!isFirst && (
-              <button className="btn btn-outline" onClick={() => handleSubmit('prev')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button className="flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all border border-border text-secondary-light hover:bg-gray-50" onClick={() => handleSubmit('prev')}>
                 <span>←</span>
                 <span>Назад</span>
               </button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {!isLast && (
-              <button className="btn btn-primary" onClick={() => handleSubmit('next')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-white bg-primary hover:opacity-90 transition-all" onClick={() => handleSubmit('next')}>
                 <span>Далее</span>
                 <span>→</span>
               </button>
             )}
-            <button className="btn btn-danger" onClick={() => handleSubmit('finish')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-white bg-red-600 hover:opacity-90 transition-all" onClick={() => handleSubmit('finish')}>
               <span>✓</span>
               <span>Завершить тест</span>
             </button>

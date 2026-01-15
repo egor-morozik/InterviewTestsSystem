@@ -2,6 +2,7 @@ import json
 
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from config.permissions import IsHROrTechLead
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -252,7 +253,7 @@ class TestResultsListView(APIView):
 
 class TestResultDetailView(APIView):
     """View detailed results of a specific candidate test"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsHROrTechLead]
 
     def get(self, request, invitation_id):
         try:
@@ -308,7 +309,7 @@ class TestResultDetailView(APIView):
 
 class QuestionFeedbackView(APIView):
     """Save/update manual feedback for a question"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsHROrTechLead]
 
     def post(self, request, invitation_id, question_id):
         try:

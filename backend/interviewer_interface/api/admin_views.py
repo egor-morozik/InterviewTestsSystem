@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 from candidate_interface.models import Candidate, Invitation
 from interviewer_interface.models import InterviewerUser, TestTemplate
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 
 from ..models import Choice, Question, Tag, TestTemplate
 from .serializers import (
@@ -304,7 +306,7 @@ class InvitationDetailView(APIView):
 
 
 class TechLeadListView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    permission_classes = [AllowAny]  # Временно разрешаем доступ without auth
 
     def get(self, request):
         """Список всех Tech Lead"""
@@ -320,6 +322,58 @@ class TechLeadListView(APIView):
             for tl in tech_leads
         ]
         return Response(data)
+
+
+class UserListView(APIView):
+    """List all users (superuser/staff only)"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_superuser and not request.user.is_staff:
+            return Response({"error": "Доступ запрещён"}, status=403)
+        User = get_user_model()
+        users = User.objects.all().order_by('-id')
+        data = [
+            {
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "is_hr": getattr(u, "is_hr", False),
+                "is_tech_lead": getattr(u, "is_tech_lead", False),
+                "is_staff": u.is_staff,
+                "is_superuser": u.is_superuser,
+            }
+            for u in users
+        ]
+        return Response(data)
+
+
+class UserDetailView(APIView):
+    """Retrieve or update a user (roles/password)"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        if not request.user.is_superuser and not request.user.is_staff:
+            return Response({"error": "Доступ запрещён"}, status=403)
+        User = get_user_model()
+        try:
+            u = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({"error": "Пользователь не найден"}, status=404)
+
+        # Update role flags
+        for flag in ("is_hr", "is_tech_lead", "is_staff", "is_superuser"):
+            if flag in request.data:
+                setattr(u, flag, bool(request.data.get(flag)))
+
+        # Update password if provided
+        if "password" in request.data and request.data.get("password"):
+            u.password = make_password(request.data.get("password"))
+
+        u.save()
+        return Response({"success": True})
 
 
 class QuestionListCreateView(APIView):
