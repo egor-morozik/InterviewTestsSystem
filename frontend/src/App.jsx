@@ -3,6 +3,7 @@ import TestPage from './pages/TestPage'
 import TechnicalInterview from './pages/TechnicalInterview'
 import TestCompleted from './pages/TestCompleted'
 import AdminPanel from './pages/AdminPanel'
+import Login from './pages/Login'
 
 function App() {
   return (
@@ -42,6 +43,9 @@ function App() {
         <Route path="/interview/:uniqueLink" element={<TechnicalInterview />} />
         <Route path="/completed/:uniqueLink" element={<TestCompleted />} />
         <Route path="/admin-panel" element={<AdminPanel />} />
+        <Route path="/admin-panel/results" element={<AdminPanel initialTab="results" />} />
+        <Route path="/admin-panel/management" element={<AdminPanel initialTab="users" />} />
+        <Route path="/login" element={<Login />} />
         <Route path="*" element={
           <div className="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-white">
             <div className="flex items-center justify-center min-h-screen p-4">

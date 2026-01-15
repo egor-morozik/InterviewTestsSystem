@@ -14,6 +14,15 @@ import {
   getUsers,
   updateUser,
   createUser,
+  createCandidate,
+  updateCandidate,
+  deleteCandidate,
+  updateQuestion,
+  deleteQuestion,
+  updateTestTemplate,
+  deleteTestTemplate,
+  deleteInvitation,
+  createTag,
 } from '../api/adminApi'
 import { getTestResults, getTestResultDetail, saveQuestionFeedback } from '../api/testApi'
 import CreateInvitationModal from '../components/CreateInvitationModal'
@@ -68,15 +77,75 @@ function CreateUserForm({ onCreate }) {
         <label><input type="checkbox" checked={isTech} onChange={e => setIsTech(e.target.checked)} /> TechLead</label>
         <label><input type="checkbox" checked={isStaff} onChange={e => setIsStaff(e.target.checked)} /> Staff</label>
         <label><input type="checkbox" checked={isSuper} onChange={e => setIsSuper(e.target.checked)} /> Superuser</label>
-        <button className="px-3 py-2 bg-primary text-white rounded" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
+        <button className="px-3 py-2 text-white rounded bg-primary" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
       </div>
       {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
     </form>
   )
 }
 
-export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState('templates')
+function CreateCandidateForm({ onCreate }) {
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!fullName.trim() || !email.trim()) return
+    try { setLoading(true); await onCreate({ full_name: fullName, email }); setFullName(''); setEmail('') } finally { setLoading(false) }
+  }
+  return (
+    <form onSubmit={submit} style={{ display:'flex', gap:8, alignItems:'center' }}>
+      <input className="form-input" placeholder="Full name" value={fullName} onChange={e=>setFullName(e.target.value)} />
+      <input className="form-input" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
+      <button className="px-3 py-2 text-white rounded bg-primary" type="submit" disabled={loading}>{loading? 'Adding...':'Add'}</button>
+    </form>
+  )
+}
+
+function CandidateItem({ candidate, onUpdate, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(candidate.full_name || '')
+  const [email, setEmail] = useState(candidate.email || '')
+  const save = async ()=>{
+    await onUpdate(candidate.id, { full_name: name, email })
+    setEditing(false)
+  }
+  return (
+    <div className="p-3 bg-white border rounded">
+      <div className="flex justify-between">
+        <div>
+          {editing ? (
+            <div style={{ display:'grid', gap:6 }}>
+              <input className="form-input" value={name} onChange={e=>setName(e.target.value)} />
+              <input className="form-input" value={email} onChange={e=>setEmail(e.target.value)} />
+            </div>
+          ) : (
+            <>
+              <div className="font-semibold">{candidate.full_name}</div>
+              <div className="text-sm text-gray-600">{candidate.email}</div>
+            </>
+          )}
+        </div>
+        <div className="flex flex-col gap-2 text-right">
+          {editing ? (
+            <div style={{ display:'flex', gap:8 }}>
+              <button className="px-2 py-1 text-white rounded bg-primary" onClick={save}>Save</button>
+              <button className="px-2 py-1 bg-gray-200 rounded" onClick={()=>setEditing(false)}>Cancel</button>
+            </div>
+          ) : (
+            <div style={{ display:'flex', gap:8 }}>
+              <button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>setEditing(true)}>Edit</button>
+              <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={onDelete}>Delete</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminPanel({ initialTab = null }) {
+  const [activeTab, setActiveTab] = useState(initialTab || 'templates')
   const [candidates, setCandidates] = useState([])
   const [invitations, setInvitations] = useState([])
   const [templates, setTemplates] = useState([])
@@ -90,6 +159,8 @@ export default function AdminPanel() {
   const [selectedResult, setSelectedResult] = useState(null)
   const [user, setUser] = useState(null)
   const [users, setUsers] = useState([])
+  const [editQuestion, setEditQuestion] = useState(null)
+  const [editTemplate, setEditTemplate] = useState(null)
 
   // pagination
   const [page, setPage] = useState({ users: 1, candidates: 1, invitations: 1, templates: 1, questions: 1, results: 1 })
@@ -118,8 +189,10 @@ export default function AdminPanel() {
       setError(null)
 
       if (activeTab === 'templates') {
-        const data = await getTestTemplates()
-        setTemplates(data)
+        const [tpls, qs, tg] = await Promise.all([getTestTemplates(), getQuestions(), getTags()])
+        setTemplates(tpls)
+        setQuestions(qs)
+        setTags(tg)
       } else if (activeTab === 'questions') {
         const [qs, tg] = await Promise.all([getQuestions(), getTags()])
         setQuestions(qs)
@@ -158,16 +231,63 @@ export default function AdminPanel() {
     loadData()
   }
 
+  const handleDeleteInvitation = async (id) => {
+    if (!confirm('Delete invitation?')) return
+    await deleteInvitation(id)
+    loadData()
+  }
+
   const handleCreateQuestion = async (data) => {
-    await createQuestion(data)
+    if (data.id) {
+      await updateQuestion(data.id, data)
+    } else {
+      await createQuestion(data)
+    }
     const qs = await getQuestions()
     setQuestions(qs)
+    setEditQuestion(null)
   }
 
   const handleCreateTemplate = async (data) => {
-    await createTestTemplate(data)
+    if (data.id) {
+      await updateTestTemplate(data.id, data)
+    } else {
+      await createTestTemplate(data)
+    }
     const tpls = await getTestTemplates()
     setTemplates(tpls)
+    setEditTemplate(null)
+  }
+
+  const handleDeleteTemplate = async (id) => {
+    if (!confirm('Delete template?')) return
+    await deleteTestTemplate(id)
+    loadData()
+  }
+
+  const handleDeleteQuestion = async (id) => {
+    if (!confirm('Delete question?')) return
+    await deleteQuestion(id)
+    loadData()
+  }
+
+  const handleCreateCandidate = async (data) => {
+    await createCandidate(data)
+    const list = await getCandidates()
+    setCandidates(list)
+  }
+
+  const handleUpdateCandidate = async (id, data) => {
+    await updateCandidate(id, data)
+    const list = await getCandidates()
+    setCandidates(list)
+  }
+
+  const handleDeleteCandidate = async (id) => {
+    if (!confirm('Delete candidate?')) return
+    await deleteCandidate(id)
+    const list = await getCandidates()
+    setCandidates(list)
   }
 
   const handleSaveUser = async (id, updated) => {
@@ -198,14 +318,14 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded shadow p-4 mb-6">
+    <div className="min-h-screen p-6 bg-gray-100">
+      <div className="mx-auto max-w-7xl">
+        <div className="p-4 mb-6 bg-white rounded shadow">
           <h1 className="text-2xl font-bold">Admin Panel</h1>
           <p className="text-sm text-gray-600">Manage tests, invitations, candidates and users</p>
         </div>
 
-        <div className="bg-white rounded shadow p-4 mb-6">
+        <div className="p-4 mb-6 bg-white rounded shadow">
           <div className="flex flex-wrap gap-3 mb-4">
             <button onClick={() => setActiveTab('templates')} className={`px-3 py-2 rounded ${activeTab==='templates'?'bg-primary text-white':'bg-gray-50'}`}>Templates</button>
             <button onClick={() => setActiveTab('questions')} className={`px-3 py-2 rounded ${activeTab==='questions'?'bg-primary text-white':'bg-gray-50'}`}>Questions</button>
@@ -221,16 +341,16 @@ export default function AdminPanel() {
             )}
           </div>
 
-          {error && <div className="p-3 bg-red-100 text-red-700 rounded">{error}</div>}
+          {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
 
           {/* Users */}
           {activeTab === 'users' && user && user.is_superuser && (
             <div>
-              <h2 className="text-lg font-semibold mb-3">User Management</h2>
+              <h2 className="mb-3 text-lg font-semibold">User Management</h2>
               <CreateUserForm onCreate={handleCreateUser} />
 
               {users.length === 0 ? (
-                <div className="p-4 bg-gray-50 rounded">No users found</div>
+                <div className="p-4 rounded bg-gray-50">No users found</div>
               ) : (
                 <div>
                   <table className="w-full text-sm border-collapse">
@@ -255,7 +375,7 @@ export default function AdminPanel() {
                           <td className="p-2 text-center"><input type="checkbox" defaultChecked={u.is_staff} id={`staff-${u.id}`} /></td>
                           <td className="p-2 text-center"><input type="checkbox" defaultChecked={u.is_superuser} id={`super-${u.id}`} /></td>
                           <td className="p-2 text-center">
-                            <button className="px-2 py-1 bg-primary text-white rounded" onClick={async () => {
+                            <button className="px-2 py-1 text-white rounded bg-primary" onClick={async () => {
                               const updated = {
                                 is_hr: document.getElementById(`hr-${u.id}`).checked,
                                 is_tech_lead: document.getElementById(`tech-${u.id}`).checked,
@@ -278,25 +398,18 @@ export default function AdminPanel() {
           {/* Candidates */}
           {activeTab === 'candidates' && (
             <div>
-              <h2 className="text-lg font-semibold mb-3">Candidates</h2>
+              <h2 className="mb-3 text-lg font-semibold">Candidates</h2>
+              <div className="p-3 mb-4 bg-white border rounded">
+                <CreateCandidateForm onCreate={handleCreateCandidate} />
+              </div>
+
               {candidates.length === 0 ? (
-                <div className="p-8 bg-gray-50 rounded">No candidates yet</div>
+                <div className="p-8 rounded bg-gray-50">No candidates yet</div>
               ) : (
                 <div>
                   <div className="space-y-3">
                     {paginate(candidates, 'candidates').map(c => (
-                      <div key={c.id} className="bg-white rounded p-3 border">
-                        <div className="flex justify-between">
-                          <div>
-                            <div className="font-semibold">{c.full_name}</div>
-                            <div className="text-sm text-gray-600">{c.email}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold">{c.invitations_count}</div>
-                            <div className="text-sm text-gray-600">invitations</div>
-                          </div>
-                        </div>
-                      </div>
+                      <CandidateItem key={c.id} candidate={c} onUpdate={handleUpdateCandidate} onDelete={()=>handleDeleteCandidate(c.id)} />
                     ))}
                   </div>
                   <Pagination currentPage={page.candidates} totalPages={Math.ceil(candidates.length / PAGE_SIZE)} onPageChange={(p)=>setPage(prev=>({...prev, candidates:p}))} />
@@ -308,30 +421,41 @@ export default function AdminPanel() {
           {/* Invitations */}
           {activeTab === 'invitations' && (
             <div>
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold">Invitations</h2>
-                <button className="px-3 py-2 bg-primary text-white rounded" onClick={()=>setShowCreateModal(true)}>Create Invitation</button>
+                <div style={{ display: 'flex', gap:8, alignItems:'center' }}>
+                  <input placeholder="Search candidate" onChange={e=>{
+                    const q = e.target.value.trim().toLowerCase()
+                    if (!q) { loadData(); return }
+                    const filtered = invitations.filter(i => i.candidate && i.candidate.full_name.toLowerCase().includes(q))
+                    setInvitations(filtered)
+                  }} className="form-input" />
+                  <button className="px-3 py-2 text-white rounded bg-primary" onClick={()=>setShowCreateModal(true)}>Create Invitation</button>
+                </div>
               </div>
 
               {invitations.length === 0 ? (
-                <div className="p-8 bg-gray-50 rounded">No invitations yet</div>
+                <div className="p-8 rounded bg-gray-50">No invitations yet</div>
               ) : (
                 <div className="space-y-4">
                   {paginate(invitations, 'invitations').map(inv => (
-                    <div key={inv.id} className="bg-white rounded p-3 border">
+                    <div key={inv.id} className="p-3 bg-white border rounded">
                       <div className="flex justify-between">
                         <div>
                           <div className="font-semibold">{inv.candidate.full_name}</div>
                           <div className="text-sm text-gray-600">{inv.candidate.email}</div>
-                          <div className="mt-2 flex gap-2">
+                          <div className="flex gap-2 mt-2">
                             <span className={`px-2 py-1 rounded text-xs ${inv.interview_type==='technical'?'bg-blue-600 text-white':'bg-pink-600 text-white'}`}>{inv.interview_type_display}</span>
-                            <span className="px-2 py-1 rounded text-xs bg-gray-200">{inv.completed? 'Completed' : inv.sent? 'Sent' : 'Draft'}</span>
+                            <span className="px-2 py-1 text-xs bg-gray-200 rounded">{inv.completed? 'Completed' : inv.sent? 'Sent' : 'Draft'}</span>
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="font-bold">{inv.test_template.name}</div>
                           <div className="mt-2">
-                            <input readOnly value={inv.interview_type==='technical'?getInterviewLink(inv.unique_link):getInvitationLink(inv.unique_link)} className="px-2 py-1 border rounded text-xs" onClick={e=>e.target.select()} />
+                            <input readOnly value={inv.interview_type==='technical'?getInterviewLink(inv.unique_link):getInvitationLink(inv.unique_link)} className="px-2 py-1 text-xs border rounded" onClick={e=>e.target.select()} />
+                          </div>
+                          <div className="mt-2">
+                            <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={()=>handleDeleteInvitation(inv.id)}>Delete</button>
                           </div>
                         </div>
                       </div>
@@ -346,21 +470,33 @@ export default function AdminPanel() {
           {/* Templates */}
           {activeTab === 'templates' && (
             <div>
-              <h2 className="text-lg font-semibold mb-3">Templates</h2>
-              <div className="bg-white rounded p-3 border mb-4">
-                <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} />
+              <h2 className="mb-3 text-lg font-semibold">Templates</h2>
+              <div className="p-3 mb-4 bg-white border rounded">
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                  <div>{editTemplate ? <strong>Editing template</strong> : <strong>Create new template</strong>}</div>
+                  {editTemplate && <button className="px-2 py-1 bg-gray-200 rounded" onClick={()=>setEditTemplate(null)}>Cancel edit</button>}
+                </div>
+                <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} initial={editTemplate} />
               </div>
 
               {templates.length === 0 ? (
-                <div className="p-8 bg-gray-50 rounded">No templates yet</div>
+                <div className="p-8 rounded bg-gray-50">No templates yet</div>
               ) : (
                 <div>
                   <div className="grid gap-3">
                     {paginate(templates, 'templates').map(t => (
-                      <div key={t.id} className="bg-white rounded p-3 border">
-                        <div className="font-semibold">{t.name}</div>
-                        <div className="text-sm text-gray-600">{t.description || '(no description)'}</div>
-                        <div className="text-sm mt-2">Time: {t.time_limit || 'unlimited'} min — Questions: {t.questions.length}</div>
+                      <div key={t.id} className="p-3 bg-white border rounded">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="font-semibold">{t.name}</div>
+                            <div className="text-sm text-gray-600">{t.description || '(no description)'}</div>
+                            <div className="mt-2 text-sm">Time: {t.time_limit || 'unlimited'} min — Questions: {t.questions.length}</div>
+                          </div>
+                          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                            <button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>setEditTemplate(t)}>Edit</button>
+                            <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={()=>handleDeleteTemplate(t.id)}>Delete</button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -373,20 +509,32 @@ export default function AdminPanel() {
           {/* Questions */}
           {activeTab === 'questions' && (
             <div>
-              <h2 className="text-lg font-semibold mb-3">Questions</h2>
-              <div className="bg-white rounded p-3 border mb-4">
-                <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} />
+              <h2 className="mb-3 text-lg font-semibold">Questions</h2>
+              <div className="p-3 mb-4 bg-white border rounded">
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                  <div>{editQuestion ? <strong>Editing question</strong> : <strong>Create new question</strong>}</div>
+                  {editQuestion && <button className="px-2 py-1 bg-gray-200 rounded" onClick={()=>setEditQuestion(null)}>Cancel edit</button>}
+                </div>
+                <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} initial={editQuestion} />
               </div>
 
               {questions.length === 0 ? (
-                <div className="p-8 bg-gray-50 rounded">No questions yet</div>
+                <div className="p-8 rounded bg-gray-50">No questions yet</div>
               ) : (
                 <div>
                   <div className="grid gap-3">
                     {paginate(questions, 'questions').map(q => (
-                      <div key={q.id} className="bg-white rounded p-3 border">
-                        <div className="font-semibold">{q.text.slice(0,150)}{q.text.length>150?'...':''}</div>
-                        <div className="text-sm text-gray-600">{q.question_type} • {q.complexity}</div>
+                      <div key={q.id} className="p-3 bg-white border rounded">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="font-semibold">{q.text.slice(0,150)}{q.text.length>150?'...':''}</div>
+                            <div className="text-sm text-gray-600">{q.question_type} • {q.complexity}</div>
+                          </div>
+                          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                            <button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>setEditQuestion(q)}>Edit</button>
+                            <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={()=>handleDeleteQuestion(q.id)}>Delete</button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -420,13 +568,22 @@ export default function AdminPanel() {
 // Note: CreateTemplateForm, CreateQuestionForm, ResultsListView, ResultsDetailView are kept as-is below
 // For brevity reuse existing implementations from previous file (omitted here). If needed we can move them to separate files.
 
-function CreateTemplateForm({ questions, onCreate }) {
+function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [timeLimit, setTimeLimit] = useState(0)
   const [selected, setSelected] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(()=>{
+    if (initial) {
+      setName(initial.name || '')
+      setDescription(initial.description || '')
+      setTimeLimit(initial.time_limit || 0)
+      setSelected(Array.isArray(initial.questions) ? initial.questions.map(q=>q.question_id || q.id) : [])
+    }
+  }, [initial])
 
   const toggle = (id) => setSelected(s => (s.includes(id) ? s.filter(x=>x!==id) : [...s, id]))
 
@@ -437,7 +594,9 @@ function CreateTemplateForm({ questions, onCreate }) {
     if (selected.length === 0) return setError('Select at least one question')
     try {
       setLoading(true)
-      await onCreate({ name, description, time_limit: Number(timeLimit) || 0, questions: selected.map(id=>({question_id:id})) })
+      const payload = { name, description, time_limit: Number(timeLimit) || 0, questions: selected }
+      if (initial && initial.id) payload.id = initial.id
+      await onCreate(payload)
       setName('')
       setDescription('')
       setTimeLimit(0)
@@ -453,14 +612,27 @@ function CreateTemplateForm({ questions, onCreate }) {
       <textarea className="form-input" value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description" />
       <div style={{ display:'flex', gap:8 }}>
         <input type="number" value={timeLimit} onChange={e=>setTimeLimit(e.target.value)} placeholder="Time limit (minutes)" />
-        <button className="px-3 py-2 bg-primary text-white rounded" type="submit">{loading?'Creating...':'Create Template'}</button>
+        <button className="px-3 py-2 text-white rounded bg-primary" type="submit">{loading? (initial? 'Saving...':'Creating...') : (initial? 'Save Template' : 'Create Template')}</button>
+      </div>
+      <div style={{ maxHeight: 220, overflow: 'auto', border: '1px solid #eee', padding:8, borderRadius:6 }}>
+        <div className="mb-2 text-sm text-gray-600">Select questions</div>
+        {questions.length === 0 && <div className="text-sm text-gray-500">No questions available</div>}
+        {questions.map(q=> (
+          <label key={q.id} style={{ display:'flex', gap:8, alignItems:'center', padding:'6px 0' }}>
+            <input type="checkbox" checked={selected.includes(q.id)} onChange={()=>toggle(q.id)} />
+            <div>
+              <div style={{ fontWeight:600 }}>{q.text.slice(0,120)}{q.text.length>120?'...':''}</div>
+              <div className="text-sm text-gray-600">{q.question_type} • {q.complexity}</div>
+            </div>
+          </label>
+        ))}
       </div>
       {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
     </form>
   )
 }
 
-function CreateQuestionForm({ tags, onCreate }) {
+function CreateQuestionForm({ tags = [], onCreate, initial = null }) {
   const [text, setText] = useState('')
   const [questionType, setQuestionType] = useState('text')
   const [complexity, setComplexity] = useState('medium')
@@ -470,7 +642,25 @@ function CreateQuestionForm({ tags, onCreate }) {
   const [choices, setChoices] = useState([{ text: '', is_correct:false }])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const tagsList = Array.isArray(tags) ? tags : []
+  const [localTags, setLocalTags] = useState(Array.isArray(tags) ? tags : [])
+  const [tagSearch, setTagSearch] = useState('')
+  const [newTagName, setNewTagName] = useState('')
+
+  useEffect(()=>{
+    setLocalTags(Array.isArray(tags) ? tags : [])
+  }, [tags])
+
+  useEffect(()=>{
+    if (initial) {
+      setText(initial.text || '')
+      setQuestionType(initial.question_type || 'text')
+      setComplexity(initial.complexity || 'medium')
+      setCorrectAnswer(initial.correct_answer || '')
+      setStdin(initial.stdin || '')
+      setSelectedTags(initial.tag_ids || (initial.tags ? initial.tags.map(t=>t.id) : []))
+      if (initial.choices) setChoices(initial.choices)
+    }
+  }, [initial])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -486,6 +676,7 @@ function CreateQuestionForm({ tags, onCreate }) {
       setLoading(true)
       const payload = { text, question_type: questionType, complexity, correct_answer: correctAnswer, stdin, tag_ids: selectedTags }
       if (questionType === 'single_choice' || questionType === 'multiple_choice') payload.choices = choices.filter(c=>c.text.trim())
+      if (initial && initial.id) payload.id = initial.id
       await onCreate(payload)
       setText('')
       setCorrectAnswer('')
@@ -499,6 +690,18 @@ function CreateQuestionForm({ tags, onCreate }) {
   const updateChoice = (i, field, val) => setChoices(c => c.map((ch,idx)=>idx===i? {...ch, [field]:val}:ch))
   const addChoice = () => setChoices(c=>[...c, {text:'', is_correct:false}])
   const removeChoice = (i) => setChoices(c=>c.filter((_,idx)=>idx!==i))
+
+  const filteredTags = localTags.filter(t=> t.name.toLowerCase().includes(tagSearch.toLowerCase()))
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    try {
+      const t = await createTag({ name: newTagName.trim() })
+      setLocalTags(l=>[...l, t])
+      setSelectedTags(s=>[...s, t.id])
+      setNewTagName('')
+    } catch (e) { console.error('Create tag failed', e) }
+  }
 
   return (
     <form onSubmit={submit} style={{ display:'grid', gap:8 }}>
@@ -526,25 +729,32 @@ function CreateQuestionForm({ tags, onCreate }) {
           <button type="button" onClick={addChoice}>Add Option</button>
         </div>
       )}
+
+      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+        <input placeholder="Search tags" value={tagSearch} onChange={e=>setTagSearch(e.target.value)} className="form-input" />
+        <input placeholder="New tag" value={newTagName} onChange={e=>setNewTagName(e.target.value)} className="form-input" />
+        <button type="button" className="px-2 py-1 bg-gray-200 rounded" onClick={handleCreateTag}>Create Tag</button>
+      </div>
+
       <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-        {tagsList.map(t=> (
+        {filteredTags.map(t=> (
           <button key={t.id} type="button" onClick={()=>toggleTag(t.id)} className={`px-2 py-1 rounded ${selectedTags.includes(t.id)?'bg-primary text-white':'bg-gray-50'}`}>
             {t.name}
           </button>
         ))}
       </div>
       {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
-      <button className="px-3 py-2 bg-primary text-white rounded" type="submit">{loading? 'Creating...' : 'Create Question'}</button>
+      <button className="px-3 py-2 text-white rounded bg-primary" type="submit">{loading? (initial? 'Saving...' : 'Creating...') : (initial? 'Save Question' : 'Create Question')}</button>
     </form>
   )
 }
 
 function ResultsListView({ results, loading, onSelectResult }) {
   if (loading) return <div>Loading results...</div>
-  if (!results.length) return <div className="p-8 bg-gray-50 rounded">No completed tests yet</div>
+  if (!results.length) return <div className="p-8 rounded bg-gray-50">No completed tests yet</div>
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-3">Test Results</h2>
+      <h2 className="mb-3 text-lg font-semibold">Test Results</h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
@@ -567,7 +777,7 @@ function ResultsListView({ results, loading, onSelectResult }) {
                 <td className="p-2 text-center">{r.interview_type && r.interview_type.includes('Tech')? 'Technical' : 'General'}</td>
                 <td className="p-2 text-center">{r.auto_score}</td>
                 <td className="p-2 text-center">{r.manual_score ?? '—'}</td>
-                <td className="p-2 text-center"><button className="px-2 py-1 bg-primary text-white rounded" onClick={()=>onSelectResult(r.id)}>View</button></td>
+                <td className="p-2 text-center"><button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>onSelectResult(r.id)}>View</button></td>
               </tr>
             ))}
           </tbody>
@@ -587,8 +797,8 @@ function ResultsDetailView({ result, onBack, onSaveScore }) {
     try { setLoading(true); const data = await getTestResultDetail(result); setDetail(data) } catch (e) { setError('Error loading') } finally { setLoading(false) }
   }
 
-  const handleSave = async (questionId, score) => {
-    try { await saveQuestionFeedback(result, questionId, score, ''); onSaveScore() } catch(e){ setError('Error saving') }
+  const handleSave = async (questionId, score, comment) => {
+    try { await saveQuestionFeedback(result, questionId, score, comment); onSaveScore(); load() } catch(e){ setError('Error saving') }
   }
 
   if (loading) return <div>Loading details...</div>
@@ -596,34 +806,48 @@ function ResultsDetailView({ result, onBack, onSaveScore }) {
 
   return (
     <div>
-      <button onClick={onBack} className="px-2 py-1 bg-gray-200 rounded mb-4">Back</button>
-      <div className="bg-white rounded p-3 border mb-4">
+      <button onClick={onBack} className="px-2 py-1 mb-4 bg-gray-200 rounded">Back</button>
+      <div className="p-3 mb-4 bg-white border rounded">
         <h3 className="font-semibold">{detail.candidate.name}</h3>
         <div className="text-sm text-gray-600">{detail.candidate.email}</div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="p-3 bg-white border rounded text-center">Auto: {detail.total_auto_score}</div>
-        <div className="p-3 bg-white border rounded text-center">Manual: {detail.total_manual_score ?? '—'}</div>
+        <div className="p-3 text-center bg-white border rounded">Auto: {detail.total_auto_score}</div>
+        <div className="p-3 text-center bg-white border rounded">Manual: {detail.total_manual_score ?? '—'}</div>
       </div>
 
       <div className="space-y-3">
         {detail.answers.map(a=> (
-          <div key={a.question_id} className="bg-white p-3 border rounded">
-            <div className="font-semibold">{a.question_text}</div>
-            <div className="text-sm text-gray-600 mb-2">Type: {a.question_type}</div>
-            <div className="bg-gray-50 p-2 rounded mb-2" style={{ fontFamily: 'monospace' }}>{a.answer}</div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <div className="text-sm text-gray-600">Auto score</div>
-                <div className="font-bold">{a.auto_score}</div>
-              </div>
-              <div style={{ width:120 }}>
-                <input type="number" min="0" max="10" defaultValue={a.manual_score ?? ''} onBlur={e=>handleSave(a.question_id, e.target.value?parseInt(e.target.value):null)} className="form-input" />
-              </div>
-            </div>
-          </div>
+          <AnswerFeedback key={a.question_id} answer={a} onSave={handleSave} />
         ))}
+      </div>
+    </div>
+  )
+}
+
+function AnswerFeedback({ answer, onSave }) {
+  const [score, setScore] = useState(answer.manual_score ?? '')
+  const [comment, setComment] = useState(answer.manual_comment ?? '')
+
+  return (
+    <div className="p-3 bg-white border rounded">
+      <div className="font-semibold">{answer.question_text}</div>
+      <div className="mb-2 text-sm text-gray-600">Type: {answer.question_type}</div>
+      <div className="p-2 mb-2 rounded bg-gray-50" style={{ fontFamily: 'monospace' }}>{answer.answer}</div>
+      <div className="flex gap-3 mb-2">
+        <div className="flex-1">
+          <div className="text-sm text-gray-600">Auto score</div>
+          <div className="font-bold">{answer.auto_score}</div>
+        </div>
+        <div style={{ width:140 }}>
+          <div className="text-sm text-gray-600">Manual score</div>
+          <input type="number" min="0" max="10" value={score} onChange={e=>setScore(e.target.value)} onBlur={()=>onSave(answer.invitation_id || answer.result_id || answer.id || answer.test_result_id || answer.result, score?parseInt(score):null, comment)} className="form-input" />
+        </div>
+      </div>
+      <div>
+        <div className="text-sm text-gray-600">Comment</div>
+        <textarea className="form-input" value={comment} onChange={e=>setComment(e.target.value)} onBlur={()=>onSave(answer.invitation_id || answer.result_id || answer.id || answer.test_result_id || answer.result, score?parseInt(score):null, comment)} />
       </div>
     </div>
   )

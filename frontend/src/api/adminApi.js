@@ -116,6 +116,18 @@ export const createQuestion = async(data) => {
     return response.data
 }
 
+export const updateQuestion = async(id, data) => {
+    await getCsrfToken()
+    const response = await axios.patch(`${API_BASE}/admin/questions/${id}/`, data)
+    return response.data
+}
+
+export const deleteQuestion = async(id) => {
+    await getCsrfToken()
+    const response = await axios.delete(`${API_BASE}/admin/questions/${id}/`)
+    return response.data
+}
+
 export const getTags = async() => {
     await getCsrfToken()
     const response = await axios.get(`${API_BASE}/admin/tags/`)
@@ -134,10 +146,46 @@ export const createTestTemplate = async(data) => {
     return response.data
 }
 
+export const updateTestTemplate = async(id, data) => {
+    await getCsrfToken()
+    const response = await axios.patch(`${API_BASE}/admin/templates/${id}/`, data)
+    return response.data
+}
+
+export const deleteTestTemplate = async(id) => {
+    await getCsrfToken()
+    const response = await axios.delete(`${API_BASE}/admin/templates/${id}/`)
+    return response.data
+}
+
+export const deleteInvitation = async(id) => {
+    await getCsrfToken()
+    const response = await axios.delete(`${API_BASE}/admin/invitations/${id}/`)
+    return response.data
+}
+
+export const updateCandidate = async(id, data) => {
+    await getCsrfToken()
+    const response = await axios.patch(`${API_BASE}/admin/candidates/${id}/`, data)
+    return response.data
+}
+
+export const deleteCandidate = async(id) => {
+    await getCsrfToken()
+    const response = await axios.delete(`${API_BASE}/admin/candidates/${id}/`)
+    return response.data
+}
+
 export const generateQuestion = async(description) => {
     await getCsrfToken()
     const response = await axios.post(`${API_BASE}/admin/generate-question/`, {
         description,
     })
+    return response.data
+}
+
+export const login = async(data) => {
+    await getCsrfToken()
+    const response = await axios.post(`${API_BASE}/login/`, data)
     return response.data
 }
