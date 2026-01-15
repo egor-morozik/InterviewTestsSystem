@@ -28,7 +28,7 @@ import { getTestResults, getTestResultDetail, saveQuestionFeedback } from '../ap
 import CreateInvitationModal from '../components/CreateInvitationModal'
 import Pagination from '../components/Pagination'
 
-function CreateUserForm({ onCreate }) {
+function CreateUserForm({ onCreate, roles /* optional: array like ['hr','tech'] to restrict role selection */ }) {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,6 +36,7 @@ function CreateUserForm({ onCreate }) {
   const [isTech, setIsTech] = useState(false)
   const [isStaff, setIsStaff] = useState(false)
   const [isSuper, setIsSuper] = useState(false)
+  const [roleSelected, setRoleSelected] = useState((Array.isArray(roles) && roles[0]) || 'hr')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -48,7 +49,15 @@ function CreateUserForm({ onCreate }) {
     }
     try {
       setLoading(true)
-      await onCreate({ username, email, password, is_hr: isHr, is_tech_lead: isTech, is_staff: isStaff, is_superuser: isSuper })
+      if (Array.isArray(roles) && roles.length) {
+        // role-restricted mode: translate selected role into flags
+        const payload = { username, email, password, is_staff: false, is_superuser: false }
+        payload.is_hr = roleSelected === 'hr'
+        payload.is_tech_lead = roleSelected === 'tech'
+        await onCreate(payload)
+      } else {
+        await onCreate({ username, email, password, is_hr: isHr, is_tech_lead: isTech, is_staff: isStaff, is_superuser: isSuper })
+      }
       setUsername('')
       setEmail('')
       setPassword('')
@@ -56,6 +65,7 @@ function CreateUserForm({ onCreate }) {
       setIsTech(false)
       setIsStaff(false)
       setIsSuper(false)
+      setRoleSelected((Array.isArray(roles) && roles[0]) || 'hr')
     } catch (err) {
       setError('Failed to create user')
     } finally {
@@ -73,11 +83,30 @@ function CreateUserForm({ onCreate }) {
         <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password (optional)" className="form-input" />
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <label><input type="checkbox" checked={isHr} onChange={e => setIsHr(e.target.checked)} /> HR</label>
-        <label><input type="checkbox" checked={isTech} onChange={e => setIsTech(e.target.checked)} /> TechLead</label>
-        <label><input type="checkbox" checked={isStaff} onChange={e => setIsStaff(e.target.checked)} /> Staff</label>
-        <label><input type="checkbox" checked={isSuper} onChange={e => setIsSuper(e.target.checked)} /> Superuser</label>
-        <button className="px-3 py-2 text-white rounded bg-primary" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
+        {Array.isArray(roles) && roles.length ? (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', gap: 8 }} role="tablist" aria-label="Select role">
+              {roles.includes('hr') && (
+                <button type="button" aria-pressed={roleSelected==='hr'} onClick={()=>setRoleSelected('hr')} className={`px-3 py-1 rounded ${roleSelected==='hr' ? 'bg-primary text-white' : 'bg-gray-100'}`}>HR</button>
+              )}
+              {roles.includes('tech') && (
+                <button type="button" aria-pressed={roleSelected==='tech'} onClick={()=>setRoleSelected('tech')} className={`px-3 py-1 rounded ${roleSelected==='tech' ? 'bg-primary text-white' : 'bg-gray-100'}`}>TechLead</button>
+              )}
+            </div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div className="text-sm text-gray-600">Selected: <strong>{roleSelected === 'hr' ? 'HR' : 'TechLead'}</strong></div>
+              <button className="px-3 py-2 text-white rounded bg-primary" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <label><input type="checkbox" checked={isHr} onChange={e => setIsHr(e.target.checked)} /> HR</label>
+            <label><input type="checkbox" checked={isTech} onChange={e => setIsTech(e.target.checked)} /> TechLead</label>
+            <label><input type="checkbox" checked={isStaff} onChange={e => setIsStaff(e.target.checked)} /> Staff</label>
+            <label><input type="checkbox" checked={isSuper} onChange={e => setIsSuper(e.target.checked)} /> Superuser</label>
+            <button className="px-3 py-2 text-white rounded bg-primary" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
+          </>
+        )}
       </div>
       {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
     </form>
@@ -193,6 +222,10 @@ export default function AdminPanel({ initialTab = null }) {
         setTemplates(tpls)
         setQuestions(qs)
         setTags(tg)
+      } else if (activeTab === 'accounts') {
+        // fetch users but show only HR/TechLead accounts in this tab
+        const list = await getUsers()
+        setUsers(list.filter(u => u.is_hr || u.is_tech_lead))
       } else if (activeTab === 'questions') {
         const [qs, tg] = await Promise.all([getQuestions(), getTags()])
         setQuestions(qs)
@@ -326,11 +359,12 @@ export default function AdminPanel({ initialTab = null }) {
         </div>
 
         <div className="p-4 mb-6 bg-white rounded shadow">
-          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3 mb-4">
             <button onClick={() => setActiveTab('templates')} className={`px-3 py-2 rounded ${activeTab==='templates'?'bg-primary text-white':'bg-gray-50'}`}>Templates</button>
             <button onClick={() => setActiveTab('questions')} className={`px-3 py-2 rounded ${activeTab==='questions'?'bg-primary text-white':'bg-gray-50'}`}>Questions</button>
             <button onClick={() => setActiveTab('candidates')} className={`px-3 py-2 rounded ${activeTab==='candidates'?'bg-primary text-white':'bg-gray-50'}`}>Candidates</button>
             <button onClick={() => setActiveTab('invitations')} className={`px-3 py-2 rounded ${activeTab==='invitations'?'bg-primary text-white':'bg-gray-50'}`}>Invitations</button>
+              <button onClick={() => setActiveTab('accounts')} className={`px-3 py-2 rounded ${activeTab==='accounts'?'bg-primary text-white':'bg-gray-50'}`}>Accounts</button>
             {(user && (user.is_hr || user.is_staff || user.is_tech_lead)) && (
               <>
                 <button onClick={() => setActiveTab('results')} className={`px-3 py-2 rounded ${activeTab==='results'?'bg-primary text-white':'bg-gray-50'}`}>Results</button>
@@ -390,6 +424,53 @@ export default function AdminPanel({ initialTab = null }) {
                     </tbody>
                   </table>
                   <Pagination currentPage={page.users} totalPages={Math.ceil(users.length / PAGE_SIZE)} onPageChange={(p)=>setPage(prev=>({...prev, users:p}))} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Accounts (HR + TechLead) */}
+          {activeTab === 'accounts' && user && (user.is_superuser || user.is_staff) && (
+            <div>
+              <h2 className="mb-3 text-lg font-semibold">Company Accounts (HR / TechLead)</h2>
+              <div className="p-3 mb-4 bg-white border rounded">
+                <div style={{ marginBottom: 8 }}><strong>Create account (HR / TechLead)</strong></div>
+                <CreateUserForm roles={['hr','tech']} onCreate={async (ud) => {
+                  // ensure only HR/TechLead flags are used here
+                  const payload = { ...ud, is_staff: false, is_superuser: false }
+                  await handleCreateUser(payload)
+                  // reload accounts list
+                  const list = await getUsers()
+                  setUsers(list.filter(u => u.is_hr || u.is_tech_lead))
+                }} />
+              </div>
+
+              {users.length === 0 ? (
+                <div className="p-8 rounded bg-gray-50">No company accounts found</div>
+              ) : (
+                <div>
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-2 text-left">Username</th>
+                        <th className="p-2 text-left">Email</th>
+                        <th className="p-2 text-center">Type</th>
+                        <th className="p-2 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginate(users, 'users').map(u => (
+                        <tr key={u.id} className="border-t">
+                          <td className="p-2">{u.username}</td>
+                          <td className="p-2">{u.email}</td>
+                          <td className="p-2 text-center">{u.is_hr ? 'HR' : u.is_tech_lead ? 'TechLead' : '—'}</td>
+                          <td className="p-2 text-center">
+                            <AccountsRow user={u} onUpdated={async ()=>{ const list = await getUsers(); setUsers(list.filter(x => x.is_hr || x.is_tech_lead)) }} onDeleted={async ()=>{ const list = await getUsers(); setUsers(list.filter(x => x.is_hr || x.is_tech_lead)) }} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -570,6 +651,9 @@ export default function AdminPanel({ initialTab = null }) {
 
 function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
   const [name, setName] = useState('')
+  const [localQuestions, setLocalQuestions] = useState(Array.isArray(questions)?questions:[])
+  const [quickQuestion, setQuickQuestion] = useState('')
+  const [questionSearch, setQuestionSearch] = useState('')
   const [description, setDescription] = useState('')
   const [timeLimit, setTimeLimit] = useState(0)
   const [selected, setSelected] = useState([])
@@ -583,7 +667,8 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
       setTimeLimit(initial.time_limit || 0)
       setSelected(Array.isArray(initial.questions) ? initial.questions.map(q=>q.question_id || q.id) : [])
     }
-  }, [initial])
+    setLocalQuestions(Array.isArray(questions)?questions:[])
+  }, [initial, questions])
 
   const toggle = (id) => setSelected(s => (s.includes(id) ? s.filter(x=>x!==id) : [...s, id]))
 
@@ -606,6 +691,17 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
     } finally { setLoading(false) }
   }
 
+  const handleQuickAdd = async () => {
+    if (!quickQuestion.trim()) return
+    try {
+      const payload = { text: quickQuestion.trim(), question_type: 'text', complexity: 'medium', correct_answer: '' }
+      const newQ = await createQuestion(payload)
+      setLocalQuestions(l => [...l, newQ])
+      setSelected(s => [...s, newQ.id])
+      setQuickQuestion('')
+    } catch (e) { console.error('Quick add failed', e) }
+  }
+
   return (
     <form onSubmit={submit} style={{ display: 'grid', gap: 8 }}>
       <input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Template name" />
@@ -615,10 +711,13 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
         <button className="px-3 py-2 text-white rounded bg-primary" type="submit">{loading? (initial? 'Saving...':'Creating...') : (initial? 'Save Template' : 'Create Template')}</button>
       </div>
       <div style={{ maxHeight: 220, overflow: 'auto', border: '1px solid #eee', padding:8, borderRadius:6 }}>
-        <div className="mb-2 text-sm text-gray-600">Select questions</div>
-        {questions.length === 0 && <div className="text-sm text-gray-500">No questions available</div>}
-        {questions.map(q=> (
-          <label key={q.id} style={{ display:'flex', gap:8, alignItems:'center', padding:'6px 0' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+            <div className="mb-2 text-sm text-gray-600">Select questions</div>
+            <input placeholder="Search questions" value={questionSearch} onChange={e=>setQuestionSearch(e.target.value)} className="form-input" style={{ maxWidth: 320 }} />
+          </div>
+          {localQuestions.length === 0 && <div className="text-sm text-gray-500">No questions available</div>}
+          {localQuestions.filter(q => q.text.toLowerCase().includes(questionSearch.trim().toLowerCase())).map(q=> (
+          <label key={q.id} style={{ display:'flex', gap:8, alignItems:'center', padding:'6px 0', background: selected.includes(q.id)?'#eef2ff':'transparent', borderRadius:6 }}>
             <input type="checkbox" checked={selected.includes(q.id)} onChange={()=>toggle(q.id)} />
             <div>
               <div style={{ fontWeight:600 }}>{q.text.slice(0,120)}{q.text.length>120?'...':''}</div>
@@ -626,6 +725,10 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
             </div>
           </label>
         ))}
+        <div style={{ display:'flex', gap:8, marginTop:8 }}>
+          <input className="form-input" placeholder="Quick add question text" value={quickQuestion} onChange={e=>setQuickQuestion(e.target.value)} />
+          <button type="button" className="px-3 py-2 text-white rounded bg-primary" onClick={handleQuickAdd}>Add</button>
+        </div>
       </div>
       {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
     </form>
@@ -749,6 +852,60 @@ function CreateQuestionForm({ tags = [], onCreate, initial = null }) {
   )
 }
 
+function AccountsRow({ user, onUpdated, onDeleted }) {
+  const [editing, setEditing] = useState(false)
+  const [username, setUsername] = useState(user.username)
+  const [email, setEmail] = useState(user.email)
+  const [isHr, setIsHr] = useState(user.is_hr)
+  const [isTech, setIsTech] = useState(user.is_tech_lead)
+  const [loading, setLoading] = useState(false)
+
+  const startEdit = () => setEditing(true)
+  const cancel = () => {
+    setUsername(user.username); setEmail(user.email); setIsHr(user.is_hr); setIsTech(user.is_tech_lead); setEditing(false)
+  }
+
+  const save = async () => {
+    setLoading(true)
+    try {
+      await updateUser(user.id, { is_hr: isHr, is_tech_lead: isTech, username, email })
+      setEditing(false)
+      if (onUpdated) await onUpdated()
+    } catch (e) { console.error(e) } finally { setLoading(false) }
+  }
+
+  const remove = async () => {
+    if (!confirm('Delete account?')) return
+    setLoading(true)
+    try {
+      // call delete API
+      const { deleteUser } = await import('../api/adminApi')
+      await deleteUser(user.id)
+      if (onDeleted) await onDeleted()
+    } catch(e){ console.error(e) } finally { setLoading(false) }
+  }
+
+  if (editing) {
+    return (
+      <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+        <input className="form-input" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:120 }} />
+        <input className="form-input" value={email} onChange={e=>setEmail(e.target.value)} style={{ width:180 }} />
+        <label><input type="checkbox" checked={isHr} onChange={e=>setIsHr(e.target.checked)} /> HR</label>
+        <label><input type="checkbox" checked={isTech} onChange={e=>setIsTech(e.target.checked)} /> Tech</label>
+        <button className="px-2 py-1 text-white rounded bg-primary" onClick={save} disabled={loading}>Save</button>
+        <button className="px-2 py-1 bg-gray-200 rounded" onClick={cancel}>Cancel</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+      <button className="px-2 py-1 bg-gray-200 rounded" onClick={startEdit}>Edit</button>
+      <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={remove}>Delete</button>
+    </div>
+  )
+}
+
 function ResultsListView({ results, loading, onSelectResult }) {
   if (loading) return <div>Loading results...</div>
   if (!results.length) return <div className="p-8 rounded bg-gray-50">No completed tests yet</div>
@@ -791,18 +948,27 @@ function ResultsDetailView({ result, onBack, onSaveScore }) {
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [answersLocal, setAnswersLocal] = useState([])
 
   useEffect(()=>{ load() }, [result])
   const load = async ()=>{
-    try { setLoading(true); const data = await getTestResultDetail(result); setDetail(data) } catch (e) { setError('Error loading') } finally { setLoading(false) }
-  }
-
-  const handleSave = async (questionId, score, comment) => {
-    try { await saveQuestionFeedback(result, questionId, score, comment); onSaveScore(); load() } catch(e){ setError('Error saving') }
+    try { setLoading(true); const data = await getTestResultDetail(result); setDetail(data); setAnswersLocal(data && data.answers ? data.answers.map(a=>({ ...a })) : []) } catch (e) { setError('Error loading') } finally { setLoading(false) }
   }
 
   if (loading) return <div>Loading details...</div>
   if (!detail) return <div>Could not load results</div>
+
+  const currentManualTotal = answersLocal.reduce((s,a)=>s + (a.manual_score?Number(a.manual_score):0), 0)
+
+  const handleSaveAll = async () => {
+    try {
+      for (const a of answersLocal) {
+        await saveQuestionFeedback(result, a.question_id || a.id, a.manual_score?Number(a.manual_score):null, a.manual_comment || '')
+      }
+      await onSaveScore()
+      await load()
+    } catch (e) { setError('Error saving changes') }
+  }
 
   return (
     <div>
@@ -814,21 +980,50 @@ function ResultsDetailView({ result, onBack, onSaveScore }) {
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="p-3 text-center bg-white border rounded">Auto: {detail.total_auto_score}</div>
-        <div className="p-3 text-center bg-white border rounded">Manual: {detail.total_manual_score ?? '—'}</div>
+        <div className="p-3 text-center bg-white border rounded">Manual (saved): {detail.total_manual_score ?? '—'}</div>
+      </div>
+
+      <div className="p-3 mb-4 bg-white border rounded">
+        <div className="flex items-center justify-between">
+          <div className="font-semibold">Manual grading (unsaved changes shown)</div>
+          <div>
+            <div className="text-sm text-gray-600">Current manual total: <strong>{currentManualTotal}</strong></div>
+          </div>
+        </div>
+        <div style={{ marginTop:8 }}>
+          <button className="px-3 py-2 mr-3 text-white rounded bg-primary" onClick={handleSaveAll}>Save changes</button>
+          <button className="px-3 py-2 bg-gray-200 rounded" onClick={()=>{ if (confirm('Discard unsaved changes?')) setAnswersLocal(detail.answers.map(a=>({ ...a }))) }}>Discard</button>
+        </div>
       </div>
 
       <div className="space-y-3">
-        {detail.answers.map(a=> (
-          <AnswerFeedback key={a.question_id} answer={a} onSave={handleSave} />
+        {answersLocal.map((a, idx)=> (
+          <AnswerFeedback key={`ans-${a.question_id || a.id || a.test_result_id || idx}`} answer={a} onChange={(updated)=>{
+            const matches = (x, u) => {
+              if (u.question_id != null && x.question_id != null) return x.question_id === u.question_id
+              if (u.id != null && x.id != null) return x.id === u.id
+              return false
+            }
+            setAnswersLocal(prev => prev.map(x=> matches(x, updated) ? { ...x, ...updated } : x ))
+          }} />
         ))}
       </div>
     </div>
   )
 }
 
-function AnswerFeedback({ answer, onSave }) {
+function AnswerFeedback({ answer, onChange }) {
   const [score, setScore] = useState(answer.manual_score ?? '')
   const [comment, setComment] = useState(answer.manual_comment ?? '')
+
+  useEffect(()=>{
+    setScore(answer.manual_score ?? '')
+    setComment(answer.manual_comment ?? '')
+  }, [answer])
+
+  const emitChange = () => {
+    if (onChange) onChange({ ...answer, manual_score: score === '' ? null : Number(score), manual_comment: comment })
+  }
 
   return (
     <div className="p-3 bg-white border rounded">
@@ -842,12 +1037,12 @@ function AnswerFeedback({ answer, onSave }) {
         </div>
         <div style={{ width:140 }}>
           <div className="text-sm text-gray-600">Manual score</div>
-          <input type="number" min="0" max="10" value={score} onChange={e=>setScore(e.target.value)} onBlur={()=>onSave(answer.invitation_id || answer.result_id || answer.id || answer.test_result_id || answer.result, score?parseInt(score):null, comment)} className="form-input" />
+          <input type="number" min="0" max="10" value={score} onChange={e=>setScore(e.target.value)} onBlur={emitChange} className="form-input" />
         </div>
       </div>
       <div>
         <div className="text-sm text-gray-600">Comment</div>
-        <textarea className="form-input" value={comment} onChange={e=>setComment(e.target.value)} onBlur={()=>onSave(answer.invitation_id || answer.result_id || answer.id || answer.test_result_id || answer.result, score?parseInt(score):null, comment)} />
+        <textarea className="form-input" value={comment} onChange={e=>setComment(e.target.value)} onBlur={emitChange} />
       </div>
     </div>
   )

@@ -96,6 +96,12 @@ export const createUser = async(data) => {
     return response.data
 }
 
+export const deleteUser = async(id) => {
+    await getCsrfToken()
+    const response = await axios.delete(`${API_BASE}/admin/users/${id}/`)
+    return response.data
+}
+
 // Шаблоны тестов
 export const getTestTemplates = async() => {
     await getCsrfToken()

@@ -14,7 +14,12 @@ from .admin_views import (
     UserDetailView,
     TestTemplateAdminCreateView,
 )
-from .views import TestTemplateDetailView, TestTemplateListView, CurrentUserView
+from .views import (
+    TestTemplateDetailView,
+    TestTemplateListView,
+    CurrentUserView,
+    LoginView,
+)
 
 urlpatterns = [
     path(
@@ -59,4 +64,6 @@ urlpatterns = [
         CurrentUserView.as_view(),
         name="current_user",
     ),
+    # Authentication endpoints
+    path("login/", LoginView.as_view(), name="login"),
 ]

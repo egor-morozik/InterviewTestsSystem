@@ -349,6 +349,44 @@ class UserListView(APIView):
         ]
         return Response(data)
 
+    def post(self, request):
+        # Only superuser or staff can create users
+        if not request.user.is_superuser and not request.user.is_staff:
+            return Response({"error": "Доступ запрещён"}, status=403)
+
+        User = get_user_model()
+        username = request.data.get("username")
+        email = request.data.get("email")
+        password = request.data.get("password")
+        is_hr = bool(request.data.get("is_hr", False))
+        is_tech_lead = bool(request.data.get("is_tech_lead", False))
+        is_staff = bool(request.data.get("is_staff", False)) if request.user.is_superuser else False
+        is_superuser = bool(request.data.get("is_superuser", False)) if request.user.is_superuser else False
+
+        if not username or not email:
+            return Response({"error": "username and email required"}, status=400)
+
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "username exists"}, status=400)
+
+        # create user
+        user = User.objects.create_user(username=username, email=email, password=password or None)
+        user.is_hr = is_hr
+        user.is_tech_lead = is_tech_lead
+        user.is_staff = is_staff
+        user.is_superuser = is_superuser
+        user.save()
+
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_hr": getattr(user, "is_hr", False),
+            "is_tech_lead": getattr(user, "is_tech_lead", False),
+            "is_staff": user.is_staff,
+            "is_superuser": user.is_superuser,
+        }, status=201)
+
 
 class UserDetailView(APIView):
     """Retrieve or update a user (roles/password)"""
@@ -373,6 +411,23 @@ class UserDetailView(APIView):
             u.password = make_password(request.data.get("password"))
 
         u.save()
+        return Response({"success": True})
+
+    def delete(self, request, pk):
+        # Allow only superuser or staff to delete users
+        if not request.user.is_superuser and not request.user.is_staff:
+            return Response({"error": "Доступ запрещён"}, status=403)
+        User = get_user_model()
+        try:
+            u = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({"error": "Пользователь не найден"}, status=404)
+
+        # protect superuser deletion by non-superusers
+        if u.is_superuser and not request.user.is_superuser:
+            return Response({"error": "Cannot delete superuser"}, status=403)
+
+        u.delete()
         return Response({"success": True})
 
 
