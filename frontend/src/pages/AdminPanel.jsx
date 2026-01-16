@@ -11,6 +11,7 @@ import {
   createTestTemplate,
   generateQuestion,
   getCurrentUser,
+  getCandidateDetail,
   getUsers,
   updateUser,
   createUser,
@@ -28,14 +29,10 @@ import { getTestResults, getTestResultDetail, saveQuestionFeedback } from '../ap
 import CreateInvitationModal from '../components/CreateInvitationModal'
 import Pagination from '../components/Pagination'
 
-function CreateUserForm({ onCreate, roles /* optional: array like ['hr','tech'] to restrict role selection */ }) {
+function CreateUserForm({ onCreate, roles }) {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isHr, setIsHr] = useState(false)
-  const [isTech, setIsTech] = useState(false)
-  const [isStaff, setIsStaff] = useState(false)
-  const [isSuper, setIsSuper] = useState(false)
   const [roleSelected, setRoleSelected] = useState((Array.isArray(roles) && roles[0]) || 'hr')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -56,15 +53,11 @@ function CreateUserForm({ onCreate, roles /* optional: array like ['hr','tech'] 
         payload.is_tech_lead = roleSelected === 'tech'
         await onCreate(payload)
       } else {
-        await onCreate({ username, email, password, is_hr: isHr, is_tech_lead: isTech, is_staff: isStaff, is_superuser: isSuper })
+        await onCreate({ username, email, password })
       }
       setUsername('')
       setEmail('')
       setPassword('')
-      setIsHr(false)
-      setIsTech(false)
-      setIsStaff(false)
-      setIsSuper(false)
       setRoleSelected((Array.isArray(roles) && roles[0]) || 'hr')
     } catch (err) {
       setError('Failed to create user')
@@ -74,41 +67,47 @@ function CreateUserForm({ onCreate, roles /* optional: array like ['hr','tech'] 
   }
 
   return (
-    <form onSubmit={submit} style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username" className="form-input" />
-        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="form-input" />
+    <form onSubmit={submit} className="space-y-4">
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        className="input"
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="input"
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="input"
+      />
+
+      <div>
+        <div className="text-sm font-medium mb-2">Role</div>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setRoleSelected('hr')}
+            className={`px-3 py-1 rounded ${roleSelected==='hr' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+            HR
+          </button>
+          <button type="button" onClick={() => setRoleSelected('tech')}
+            className={`px-3 py-1 rounded ${roleSelected==='tech' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+            Tech Lead
+          </button>
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password (optional)" className="form-input" />
-      </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {Array.isArray(roles) && roles.length ? (
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', width: '100%' }}>
-            <div style={{ display: 'flex', gap: 8 }} role="tablist" aria-label="Select role">
-              {roles.includes('hr') && (
-                <button type="button" aria-pressed={roleSelected==='hr'} onClick={()=>setRoleSelected('hr')} className={`px-3 py-1 rounded ${roleSelected==='hr' ? 'bg-primary text-white' : 'bg-gray-100'}`}>HR</button>
-              )}
-              {roles.includes('tech') && (
-                <button type="button" aria-pressed={roleSelected==='tech'} onClick={()=>setRoleSelected('tech')} className={`px-3 py-1 rounded ${roleSelected==='tech' ? 'bg-primary text-white' : 'bg-gray-100'}`}>TechLead</button>
-              )}
-            </div>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div className="text-sm text-gray-600">Selected: <strong>{roleSelected === 'hr' ? 'HR' : 'TechLead'}</strong></div>
-              <button className="px-3 py-2 text-white rounded bg-primary" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <label><input type="checkbox" checked={isHr} onChange={e => setIsHr(e.target.checked)} /> HR</label>
-            <label><input type="checkbox" checked={isTech} onChange={e => setIsTech(e.target.checked)} /> TechLead</label>
-            <label><input type="checkbox" checked={isStaff} onChange={e => setIsStaff(e.target.checked)} /> Staff</label>
-            <label><input type="checkbox" checked={isSuper} onChange={e => setIsSuper(e.target.checked)} /> Superuser</label>
-            <button className="px-3 py-2 text-white rounded bg-primary" disabled={loading} type="submit">{loading ? 'Creating...' : 'Create'}</button>
-          </>
-        )}
-      </div>
-      {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button type="submit" className="btn" disabled={loading}>
+        {loading ? 'Creating...' : 'Create User'}
+      </button>
     </form>
   )
 }
@@ -131,42 +130,18 @@ function CreateCandidateForm({ onCreate }) {
   )
 }
 
-function CandidateItem({ candidate, onUpdate, onDelete }) {
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(candidate.full_name || '')
-  const [email, setEmail] = useState(candidate.email || '')
-  const save = async ()=>{
-    await onUpdate(candidate.id, { full_name: name, email })
-    setEditing(false)
-  }
+function CandidateItem({ candidate, onUpdate, onDelete, onView, onEdit }) {
   return (
     <div className="p-3 bg-white border rounded">
       <div className="flex justify-between">
         <div>
-          {editing ? (
-            <div style={{ display:'grid', gap:6 }}>
-              <input className="form-input" value={name} onChange={e=>setName(e.target.value)} />
-              <input className="form-input" value={email} onChange={e=>setEmail(e.target.value)} />
-            </div>
-          ) : (
-            <>
-              <div className="font-semibold">{candidate.full_name}</div>
-              <div className="text-sm text-gray-600">{candidate.email}</div>
-            </>
-          )}
+          <div className="font-semibold">{candidate.full_name}</div>
+          <div className="text-sm text-gray-600">{candidate.email}</div>
         </div>
         <div className="flex flex-col gap-2 text-right">
-          {editing ? (
-            <div style={{ display:'flex', gap:8 }}>
-              <button className="px-2 py-1 text-white rounded bg-primary" onClick={save}>Save</button>
-              <button className="px-2 py-1 bg-gray-200 rounded" onClick={()=>setEditing(false)}>Cancel</button>
-            </div>
-          ) : (
-            <div style={{ display:'flex', gap:8 }}>
-              <button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>setEditing(true)}>Edit</button>
-              <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={onDelete}>Delete</button>
-            </div>
-          )}
+          <button type="button" className="px-2 py-1 text-white rounded bg-primary" onClick={onEdit}>Edit</button>
+          <button type="button" className="px-2 py-1 bg-gray-200 rounded" onClick={(e) => { e.preventDefault(); onView && onView(); }}>View</button>
+          <button type="button" className="px-2 py-1 text-white bg-red-600 rounded" onClick={() => onDelete && onDelete()}>Delete</button>
         </div>
       </div>
     </div>
@@ -176,6 +151,8 @@ function CandidateItem({ candidate, onUpdate, onDelete }) {
 export default function AdminPanel({ initialTab = null }) {
   const [activeTab, setActiveTab] = useState(initialTab || 'templates')
   const [candidates, setCandidates] = useState([])
+  const [candidateSearch, setCandidateSearch] = useState('')
+  const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [invitations, setInvitations] = useState([])
   const [templates, setTemplates] = useState([])
   const [questions, setQuestions] = useState([])
@@ -190,6 +167,9 @@ export default function AdminPanel({ initialTab = null }) {
   const [users, setUsers] = useState([])
   const [editQuestion, setEditQuestion] = useState(null)
   const [editTemplate, setEditTemplate] = useState(null)
+  const [editCandidate, setEditCandidate] = useState(null)
+  const [editUser, setEditUser] = useState(null)
+  const [editUserRole, setEditUserRole] = useState(null)
 
   // pagination
   const [page, setPage] = useState({ users: 1, candidates: 1, invitations: 1, templates: 1, questions: 1, results: 1 })
@@ -205,6 +185,14 @@ export default function AdminPanel({ initialTab = null }) {
       }
     })()
   }, [])
+
+  useEffect(() => {
+    if (editUser) {
+      setEditUserRole(editUser.is_hr ? 'hr' : editUser.is_tech_lead ? 'tech' : null)
+    } else {
+      setEditUserRole(null)
+    }
+  }, [editUser])
 
   useEffect(() => {
     loadData()
@@ -267,7 +255,7 @@ export default function AdminPanel({ initialTab = null }) {
   const handleDeleteInvitation = async (id) => {
     if (!confirm('Delete invitation?')) return
     await deleteInvitation(id)
-    loadData()
+    setInvitations(invitations.filter(i => i.id !== id))
   }
 
   const handleCreateQuestion = async (data) => {
@@ -295,13 +283,13 @@ export default function AdminPanel({ initialTab = null }) {
   const handleDeleteTemplate = async (id) => {
     if (!confirm('Delete template?')) return
     await deleteTestTemplate(id)
-    loadData()
+    setTemplates(templates.filter(t => t.id !== id))
   }
 
   const handleDeleteQuestion = async (id) => {
     if (!confirm('Delete question?')) return
     await deleteQuestion(id)
-    loadData()
+    setQuestions(questions.filter(q => q.id !== id))
   }
 
   const handleCreateCandidate = async (data) => {
@@ -326,7 +314,12 @@ export default function AdminPanel({ initialTab = null }) {
   const handleSaveUser = async (id, updated) => {
     await updateUser(id, updated)
     const list = await getUsers()
-    setUsers(list)
+    // if we're on the accounts tab, keep only HR/TechLead accounts
+    if (activeTab === 'accounts') {
+      setUsers(list.filter(u => u.is_hr || u.is_tech_lead))
+    } else {
+      setUsers(list)
+    }
   }
 
   const handleCreateUser = async (userData) => {
@@ -355,7 +348,6 @@ export default function AdminPanel({ initialTab = null }) {
       <div className="mx-auto max-w-7xl">
         <div className="p-4 mb-6 bg-white rounded shadow">
           <h1 className="text-2xl font-bold">Admin Panel</h1>
-          <p className="text-sm text-gray-600">Manage tests, invitations, candidates and users</p>
         </div>
 
         <div className="p-4 mb-6 bg-white rounded shadow">
@@ -465,7 +457,8 @@ export default function AdminPanel({ initialTab = null }) {
                           <td className="p-2">{u.email}</td>
                           <td className="p-2 text-center">{u.is_hr ? 'HR' : u.is_tech_lead ? 'TechLead' : '—'}</td>
                           <td className="p-2 text-center">
-                            <AccountsRow user={u} onUpdated={async ()=>{ const list = await getUsers(); setUsers(list.filter(x => x.is_hr || x.is_tech_lead)) }} onDeleted={async ()=>{ const list = await getUsers(); setUsers(list.filter(x => x.is_hr || x.is_tech_lead)) }} />
+                            <button className="px-2 py-1 text-white rounded bg-primary mr-2" onClick={() => setEditUser(u)}>Edit</button>
+                            <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={async () => { if (confirm('Delete this account?')) { await deleteUser(u.id); const list = await getUsers(); setUsers(list.filter(x => x.is_hr || x.is_tech_lead)) } }}>Delete</button>
                           </td>
                         </tr>
                       ))}
@@ -484,16 +477,25 @@ export default function AdminPanel({ initialTab = null }) {
                 <CreateCandidateForm onCreate={handleCreateCandidate} />
               </div>
 
+              <div style={{ marginBottom: 12, display:'flex', gap:8 }}>
+                <input placeholder="Search candidates by name" value={candidateSearch} onChange={e=>setCandidateSearch(e.target.value)} className="form-input" />
+              </div>
               {candidates.length === 0 ? (
                 <div className="p-8 rounded bg-gray-50">No candidates yet</div>
               ) : (
                 <div>
-                  <div className="space-y-3">
-                    {paginate(candidates, 'candidates').map(c => (
-                      <CandidateItem key={c.id} candidate={c} onUpdate={handleUpdateCandidate} onDelete={()=>handleDeleteCandidate(c.id)} />
-                    ))}
-                  </div>
-                  <Pagination currentPage={page.candidates} totalPages={Math.ceil(candidates.length / PAGE_SIZE)} onPageChange={(p)=>setPage(prev=>({...prev, candidates:p}))} />
+                  {selectedCandidate ? (
+                    <CandidateDetailView id={selectedCandidate} onClose={()=>setSelectedCandidate(null)} />
+                  ) : (
+                    <div>
+                      <div className="space-y-3">
+                        {paginate(candidates.filter(c=> c.full_name.toLowerCase().includes(candidateSearch.trim().toLowerCase())), 'candidates').map(c => (
+                          <CandidateItem key={c.id} candidate={c} onUpdate={handleUpdateCandidate} onDelete={()=>handleDeleteCandidate(c.id)} onView={()=>setSelectedCandidate(c.id)} onEdit={() => setEditCandidate(c)} />
+                        ))}
+                      </div>
+                      <Pagination currentPage={page.candidates} totalPages={Math.ceil(candidates.filter(c=> c.full_name.toLowerCase().includes(candidateSearch.trim().toLowerCase())).length / PAGE_SIZE)} onPageChange={(p)=>setPage(prev=>({...prev, candidates:p}))} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -553,11 +555,8 @@ export default function AdminPanel({ initialTab = null }) {
             <div>
               <h2 className="mb-3 text-lg font-semibold">Templates</h2>
               <div className="p-3 mb-4 bg-white border rounded">
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                  <div>{editTemplate ? <strong>Editing template</strong> : <strong>Create new template</strong>}</div>
-                  {editTemplate && <button className="px-2 py-1 bg-gray-200 rounded" onClick={()=>setEditTemplate(null)}>Cancel edit</button>}
-                </div>
-                <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} initial={editTemplate} />
+                <div style={{ marginBottom:8 }}><strong>Create new template</strong></div>
+                <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} initial={null} />
               </div>
 
               {templates.length === 0 ? (
@@ -592,11 +591,8 @@ export default function AdminPanel({ initialTab = null }) {
             <div>
               <h2 className="mb-3 text-lg font-semibold">Questions</h2>
               <div className="p-3 mb-4 bg-white border rounded">
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                  <div>{editQuestion ? <strong>Editing question</strong> : <strong>Create new question</strong>}</div>
-                  {editQuestion && <button className="px-2 py-1 bg-gray-200 rounded" onClick={()=>setEditQuestion(null)}>Cancel edit</button>}
-                </div>
-                <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} initial={editQuestion} />
+                <div style={{ marginBottom:8 }}><strong>Create new question</strong></div>
+                <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} initial={null} />
               </div>
 
               {questions.length === 0 ? (
@@ -641,18 +637,177 @@ export default function AdminPanel({ initialTab = null }) {
         {showCreateModal && (
           <CreateInvitationModal templates={templates} candidates={candidates} techLeads={techLeads} onClose={()=>setShowCreateModal(false)} onSubmit={handleCreateInvitation} />
         )}
+
+        {editTemplate && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl max-h-96 overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Edit Template</h2>
+                <button onClick={() => setEditTemplate(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} initial={editTemplate} />
+              <button onClick={() => setEditTemplate(null)} className="mt-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Close</button>
+            </div>
+          </div>
+        )}
+
+        {editQuestion && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl max-h-96 overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Edit Question</h2>
+                <button onClick={() => setEditQuestion(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} initial={editQuestion} />
+              <button onClick={() => setEditQuestion(null)} className="mt-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Close</button>
+            </div>
+          </div>
+        )}
+
+        {editCandidate && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Edit Candidate</h2>
+                <button onClick={() => setEditCandidate(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name</label>
+                  <input 
+                    type="text" 
+                    defaultValue={editCandidate.full_name}
+                    id="edit-candidate-name"
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    defaultValue={editCandidate.email}
+                    id="edit-candidate-email"
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button 
+                  onClick={async () => {
+                    const name = document.getElementById('edit-candidate-name').value
+                    const email = document.getElementById('edit-candidate-email').value
+                    if (name && email) {
+                      await updateCandidate(editCandidate.id, { full_name: name, email })
+                      const cands = await getCandidates()
+                      setCandidates(cands)
+                      setEditCandidate(null)
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-primary text-white rounded hover:opacity-90"
+                >
+                  Save
+                </button>
+                <button onClick={() => setEditCandidate(null)} className="flex-1 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {editUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg max-h-96 overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Edit User Account</h2>
+                <button onClick={() => setEditUser(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Username</label>
+                  <input 
+                    type="text" 
+                    defaultValue={editUser.username}
+                    id="edit-user-username"
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    defaultValue={editUser.email}
+                    id="edit-user-email"
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Role</div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setEditUserRole('hr')}
+                      className={`px-3 py-1 rounded ${editUserRole==='hr' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                      HR
+                    </button>
+                    <button type="button" onClick={() => setEditUserRole('tech')}
+                      className={`px-3 py-1 rounded ${editUserRole==='tech' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                      Tech Lead
+                    </button>
+                  </div>
+                </div>
+                {user && user.is_superuser && (
+                  <>
+                    <div>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" defaultChecked={editUser.is_staff} id="edit-user-staff" />
+                        <span>Staff</span>
+                      </label>
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" defaultChecked={editUser.is_superuser} id="edit-user-super" />
+                        <span>Superuser</span>
+                      </label>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button 
+                  onClick={async () => {
+                    const username = document.getElementById('edit-user-username').value
+                    const email = document.getElementById('edit-user-email').value
+                    
+                    if (!username.trim() || !email.trim()) {
+                      alert('Username and email are required')
+                      return
+                    }
+
+                    const updated = {
+                      username,
+                      email,
+                      is_hr: editUserRole === 'hr',
+                      is_tech_lead: editUserRole === 'tech',
+                      is_staff: user?.is_superuser ? document.getElementById('edit-user-staff').checked : editUser.is_staff,
+                      is_superuser: user?.is_superuser ? document.getElementById('edit-user-super').checked : editUser.is_superuser,
+                    }
+                    await handleSaveUser(editUser.id, updated)
+                    setEditUser(null)
+                  }}
+                  className="flex-1 px-4 py-2 bg-primary text-white rounded hover:opacity-90"
+                >
+                  Save
+                </button>
+                <button onClick={() => setEditUser(null)} className="flex-1 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-// Note: CreateTemplateForm, CreateQuestionForm, ResultsListView, ResultsDetailView are kept as-is below
-// For brevity reuse existing implementations from previous file (omitted here). If needed we can move them to separate files.
-
 function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
   const [name, setName] = useState('')
   const [localQuestions, setLocalQuestions] = useState(Array.isArray(questions)?questions:[])
-  const [quickQuestion, setQuickQuestion] = useState('')
   const [questionSearch, setQuestionSearch] = useState('')
   const [description, setDescription] = useState('')
   const [timeLimit, setTimeLimit] = useState(0)
@@ -666,6 +821,11 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
       setDescription(initial.description || '')
       setTimeLimit(initial.time_limit || 0)
       setSelected(Array.isArray(initial.questions) ? initial.questions.map(q=>q.question_id || q.id) : [])
+    } else {
+      setName('')
+      setDescription('')
+      setTimeLimit(0)
+      setSelected([])
     }
     setLocalQuestions(Array.isArray(questions)?questions:[])
   }, [initial, questions])
@@ -691,16 +851,7 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
     } finally { setLoading(false) }
   }
 
-  const handleQuickAdd = async () => {
-    if (!quickQuestion.trim()) return
-    try {
-      const payload = { text: quickQuestion.trim(), question_type: 'text', complexity: 'medium', correct_answer: '' }
-      const newQ = await createQuestion(payload)
-      setLocalQuestions(l => [...l, newQ])
-      setSelected(s => [...s, newQ.id])
-      setQuickQuestion('')
-    } catch (e) { console.error('Quick add failed', e) }
-  }
+  // quick-add removed
 
   return (
     <form onSubmit={submit} style={{ display: 'grid', gap: 8 }}>
@@ -710,6 +861,7 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
         <input type="number" value={timeLimit} onChange={e=>setTimeLimit(e.target.value)} placeholder="Time limit (minutes)" />
         <button className="px-3 py-2 text-white rounded bg-primary" type="submit">{loading? (initial? 'Saving...':'Creating...') : (initial? 'Save Template' : 'Create Template')}</button>
       </div>
+      <div className="text-sm text-gray-500">0 — no limit (minutes). Enter number of minutes for the test time limit.</div>
       <div style={{ maxHeight: 220, overflow: 'auto', border: '1px solid #eee', padding:8, borderRadius:6 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
             <div className="mb-2 text-sm text-gray-600">Select questions</div>
@@ -725,10 +877,7 @@ function CreateTemplateForm({ questions = [], onCreate, initial = null }) {
             </div>
           </label>
         ))}
-        <div style={{ display:'flex', gap:8, marginTop:8 }}>
-          <input className="form-input" placeholder="Quick add question text" value={quickQuestion} onChange={e=>setQuickQuestion(e.target.value)} />
-          <button type="button" className="px-3 py-2 text-white rounded bg-primary" onClick={handleQuickAdd}>Add</button>
-        </div>
+          {/* quick-add removed */}
       </div>
       {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
     </form>
@@ -906,32 +1055,174 @@ function AccountsRow({ user, onUpdated, onDeleted }) {
   )
 }
 
+function CandidateDetailView({ id, onClose }) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!id) return
+    ;(async () => {
+      try {
+        setLoading(true)
+        const d = await getCandidateDetail(id)
+        setData(d)
+      } catch (e) {
+        console.error('Fetch candidate detail failed', e)
+        setError('Could not load candidate')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [id])
+
+  if (loading) return <div>Loading candidate...</div>
+  if (error) return <div className="p-4 text-red-700">{error}</div>
+  if (!data) return <div className="p-4">Candidate not found</div>
+
+  return (
+    <div>
+      <button onClick={onClose} className="px-2 py-1 mb-4 bg-gray-200 rounded">Back</button>
+      <div className="p-3 mb-4 bg-white border rounded">
+        <h3 className="font-semibold">{data.full_name}</h3>
+        <div className="text-sm text-gray-600">{data.email}</div>
+      </div>
+
+      <div className="space-y-3">
+        {Array.isArray(data.invitations) && data.invitations.length === 0 && <div className="p-3 bg-white border rounded">No invitations</div>}
+        {Array.isArray(data.invitations) && data.invitations.map(inv => (
+          <div key={inv.id} className="p-3 bg-white border rounded">
+            <div className="flex justify-between">
+              <div>
+                <div className="font-semibold">{inv.test_template && inv.test_template.name}</div>
+                <div className="text-sm text-gray-600">Type: {inv.interview_type_display || inv.interview_type}</div>
+                <div className="text-sm text-gray-600">Status: {inv.completed ? 'Completed' : inv.sent ? 'Sent' : 'Draft'}</div>
+                <div className="text-sm text-gray-600">Score: {inv.tech_total_score ?? '—'}</div>
+              </div>
+              <div className="text-right">
+                <input readOnly value={inv.interview_type === 'technical' ? `${window.location.origin}/interview/${inv.unique_link}` : `${window.location.origin}/test/${inv.unique_link}`} className="px-2 py-1 text-xs border rounded" onClick={e => e.target.select()} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ResultsListView({ results, loading, onSelectResult }) {
+  const [filterCandidate, setFilterCandidate] = useState('')
+  const [filterEmail, setFilterEmail] = useState('')
+  const [filterTemplate, setFilterTemplate] = useState('')
+  const [filterScoreMin, setFilterScoreMin] = useState('')
+  const [sortBy, setSortBy] = useState('score_desc')
+
+  // Get unique templates
+  const uniqueTemplates = [...new Set(results.map(r => r.test_template))].sort()
+
+  // Calculate percentage for each result
+  const resultsWithPercent = results.map(r => {
+    const auto = Number(r.auto_score) || 0
+    const manual = Number(r.manual_score) || 0
+    const total = auto + manual
+    const percent = total > 0 ? ((total / 100) * 100).toFixed(1) : 0
+    return { ...r, percent: Number(percent), total }
+  })
+
+  // Filter results
+  const filtered = resultsWithPercent.filter(r => {
+    const matchCandidate = r.candidate_name.toLowerCase().includes(filterCandidate.toLowerCase())
+    const matchEmail = r.candidate_email.toLowerCase().includes(filterEmail.toLowerCase())
+    const matchTemplate = filterTemplate === '' || r.test_template === filterTemplate
+    const scoreMin = filterScoreMin === '' ? true : r.percent >= Number(filterScoreMin)
+    return matchCandidate && matchEmail && matchTemplate && scoreMin
+  })
+
+  // Sort results
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'score_asc') return a.percent - b.percent
+    if (sortBy === 'score_desc') return b.percent - a.percent
+    if (sortBy === 'name_asc') return a.candidate_name.localeCompare(b.candidate_name)
+    if (sortBy === 'name_desc') return b.candidate_name.localeCompare(a.candidate_name)
+    return 0
+  })
+
   if (loading) return <div>Loading results...</div>
   if (!results.length) return <div className="p-8 rounded bg-gray-50">No completed tests yet</div>
   return (
     <div>
-      <h2 className="mb-3 text-lg font-semibold">Test Results</h2>
+      <h2 className="mb-4 text-lg font-semibold">Test Results</h2>
+      
+      <div className="mb-6 grid grid-cols-5 gap-3">
+        <input
+          type="text"
+          placeholder="Filter by candidate name..."
+          value={filterCandidate}
+          onChange={(e) => setFilterCandidate(e.target.value)}
+          className="px-3 py-2 border rounded"
+        />
+        <input
+          type="text"
+          placeholder="Filter by email..."
+          value={filterEmail}
+          onChange={(e) => setFilterEmail(e.target.value)}
+          className="px-3 py-2 border rounded"
+        />
+        <select
+          value={filterTemplate}
+          onChange={(e) => setFilterTemplate(e.target.value)}
+          className="px-3 py-2 border rounded"
+        >
+          <option value="">All Templates</option>
+          {uniqueTemplates.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          placeholder="Min score %"
+          value={filterScoreMin}
+          onChange={(e) => setFilterScoreMin(e.target.value)}
+          className="px-3 py-2 border rounded"
+          min="0"
+          max="100"
+        />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-3 py-2 border rounded"
+        >
+          <option value="score_desc">Score ↓</option>
+          <option value="score_asc">Score ↑</option>
+          <option value="name_asc">Name A-Z</option>
+          <option value="name_desc">Name Z-A</option>
+        </select>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-gray-100">
               <th className="p-2 text-left">Candidate</th>
               <th className="p-2 text-left">Email</th>
-              <th className="p-2 text-left">Test</th>
+                <th className="p-2 text-left">Test</th>
               <th className="p-2 text-center">Type</th>
+                <th className="p-2 text-center">Tab switches</th>
+              <th className="p-2 text-center">Score %</th>
               <th className="p-2 text-center">Auto</th>
               <th className="p-2 text-center">Manual</th>
               <th className="p-2 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {results.map(r=> (
+            {sorted.map(r=> (
               <tr key={r.id} className="border-t">
                 <td className="p-2">{r.candidate_name}</td>
                 <td className="p-2">{r.candidate_email}</td>
                 <td className="p-2">{r.test_template}</td>
                 <td className="p-2 text-center">{r.interview_type && r.interview_type.includes('Tech')? 'Technical' : 'General'}</td>
+                <td className="p-2 text-center">{r.tab_switches ?? 0}</td>
+                <td className="p-2 text-center font-semibold" style={{color: r.percent >= 70 ? '#16a34a' : r.percent >= 50 ? '#eab308' : '#dc2626'}}>{r.percent}%</td>
                 <td className="p-2 text-center">{r.auto_score}</td>
                 <td className="p-2 text-center">{r.manual_score ?? '—'}</td>
                 <td className="p-2 text-center"><button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>onSelectResult(r.id)}>View</button></td>
@@ -940,6 +1231,7 @@ function ResultsListView({ results, loading, onSelectResult }) {
           </tbody>
         </table>
       </div>
+      {sorted.length === 0 && <div className="mt-4 text-gray-500">No results match your filters</div>}
     </div>
   )
 }

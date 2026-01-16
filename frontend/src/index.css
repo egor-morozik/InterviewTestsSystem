@@ -6,7 +6,7 @@
     input,
     select,
     textarea {
-        @apply appearance-none bg-transparent border-0 outline-none;
+        @apply bg-transparent border-0 outline-none appearance-none;
     }
 }
 

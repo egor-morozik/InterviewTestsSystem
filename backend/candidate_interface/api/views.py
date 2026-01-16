@@ -245,6 +245,7 @@ class TestResultsListView(APIView):
                 'auto_score': auto_score,
                 'manual_score': manual_score,
                 'completed_at': invitation.answers.latest('id').id if answers else None,  # Use as timestamp proxy
+                'tab_switches': invitation.tab_switches.filter(event_type='hidden').count(),
                 'unique_link': str(invitation.unique_link),
             })
 

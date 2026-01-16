@@ -40,6 +40,12 @@ export const createCandidate = async(candidateData) => {
     return response.data
 }
 
+export const getCandidateDetail = async(id) => {
+    await getCsrfToken()
+    const response = await axios.get(`${API_BASE}/admin/candidates/${id}/`)
+    return response.data
+}
+
 // Приглашения
 export const getInvitations = async() => {
     await getCsrfToken()

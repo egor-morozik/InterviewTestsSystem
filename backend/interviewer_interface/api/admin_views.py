@@ -23,10 +23,9 @@ from .serializers import (
 
 
 class AdminDashboardView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        """Статистика для дашборда"""
         total_candidates = Candidate.objects.count()
         total_invitations = Invitation.objects.count()
         completed_invitations = Invitation.objects.filter(completed=True).count()
@@ -47,10 +46,9 @@ class AdminDashboardView(APIView):
 
 
 class CandidateListView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        """Список всех кандидатов"""
         candidates = Candidate.objects.all().order_by("-id")
         data = [
             {
@@ -64,7 +62,6 @@ class CandidateListView(APIView):
         return Response(data)
 
     def post(self, request):
-        """Создать нового кандидата"""
         email = request.data.get("email")
         full_name = request.data.get("full_name")
 
@@ -93,11 +90,43 @@ class CandidateListView(APIView):
         )
 
 
+class CandidateDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        try:
+            c = Candidate.objects.get(id=pk)
+        except Candidate.DoesNotExist:
+            return Response({"error": "Candidate not found"}, status=404)
+
+        invitations = (
+            c.invitations.select_related("test_template").all().order_by("-id")
+        )
+        inv_data = [
+            {
+                "id": inv.id,
+                "test_template": {"id": inv.test_template.id, "name": inv.test_template.name},
+                "unique_link": str(inv.unique_link),
+                "sent": inv.sent,
+                "completed": inv.completed,
+                "interview_type": inv.interview_type,
+                "tech_total_score": inv.tech_total_score,
+            }
+            for inv in invitations
+        ]
+
+        return Response({
+            "id": c.id,
+            "email": c.email,
+            "full_name": c.full_name,
+            "invitations": inv_data,
+        })
+
+
 class InvitationListView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        """Список всех приглашений"""
         invitations = (
             Invitation.objects.select_related(
                 "candidate", "test_template", "assigned_tech_lead"
@@ -139,7 +168,6 @@ class InvitationListView(APIView):
         return Response(data)
 
     def post(self, request):
-        """Создать новое приглашение"""
         candidate_id = request.data.get("candidate_id")
         test_template_id = request.data.get("test_template_id")
         interview_type = request.data.get("interview_type", "general")
@@ -201,10 +229,9 @@ class InvitationListView(APIView):
 
 
 class InvitationDetailView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    permission_classes = [AllowAny]
 
     def get(self, request, pk):
-        """Детали приглашения"""
         try:
             invitation = Invitation.objects.select_related(
                 "candidate", "test_template", "assigned_tech_lead"
@@ -214,7 +241,6 @@ class InvitationDetailView(APIView):
                 {"error": "Приглашение не найдено"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        # Получаем ответы
         answers = invitation.answers.select_related("question").all()
         answers_data = [
             {
@@ -262,7 +288,6 @@ class InvitationDetailView(APIView):
         )
 
     def patch(self, request, pk):
-        """Обновить приглашение (например, отметить как отправленное)"""
         try:
             invitation = Invitation.objects.get(id=pk)
         except Invitation.DoesNotExist:
@@ -306,10 +331,9 @@ class InvitationDetailView(APIView):
 
 
 class TechLeadListView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ without auth
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        """Список всех Tech Lead"""
         tech_leads = InterviewerUser.objects.filter(is_tech_lead=True)
         data = [
             {
@@ -325,7 +349,6 @@ class TechLeadListView(APIView):
 
 
 class UserListView(APIView):
-    """List all users (superuser/staff only)"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -350,7 +373,6 @@ class UserListView(APIView):
         return Response(data)
 
     def post(self, request):
-        # Only superuser or staff can create users
         if not request.user.is_superuser and not request.user.is_staff:
             return Response({"error": "Доступ запрещён"}, status=403)
 
@@ -369,7 +391,6 @@ class UserListView(APIView):
         if User.objects.filter(username=username).exists():
             return Response({"error": "username exists"}, status=400)
 
-        # create user
         user = User.objects.create_user(username=username, email=email, password=password or None)
         user.is_hr = is_hr
         user.is_tech_lead = is_tech_lead
@@ -389,7 +410,6 @@ class UserListView(APIView):
 
 
 class UserDetailView(APIView):
-    """Retrieve or update a user (roles/password)"""
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
@@ -401,12 +421,20 @@ class UserDetailView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Пользователь не найден"}, status=404)
 
-        # Update role flags
+        if "username" in request.data and request.data.get("username"):
+            if User.objects.filter(username=request.data.get("username")).exclude(id=pk).exists():
+                return Response({"error": "Username already exists"}, status=400)
+            u.username = request.data.get("username")
+
+        if "email" in request.data and request.data.get("email"):
+            if User.objects.filter(email=request.data.get("email")).exclude(id=pk).exists():
+                return Response({"error": "Email already exists"}, status=400)
+            u.email = request.data.get("email")
+
         for flag in ("is_hr", "is_tech_lead", "is_staff", "is_superuser"):
             if flag in request.data:
                 setattr(u, flag, bool(request.data.get(flag)))
 
-        # Update password if provided
         if "password" in request.data and request.data.get("password"):
             u.password = make_password(request.data.get("password"))
 
@@ -414,7 +442,6 @@ class UserDetailView(APIView):
         return Response({"success": True})
 
     def delete(self, request, pk):
-        # Allow only superuser or staff to delete users
         if not request.user.is_superuser and not request.user.is_staff:
             return Response({"error": "Доступ запрещён"}, status=403)
         User = get_user_model()
@@ -423,7 +450,6 @@ class UserDetailView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Пользователь не найден"}, status=404)
 
-        # protect superuser deletion by non-superusers
         if u.is_superuser and not request.user.is_superuser:
             return Response({"error": "Cannot delete superuser"}, status=403)
 
@@ -510,7 +536,6 @@ class GenerateQuestionView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """Generate question from text description using AI service"""
         try:
             description = request.data.get("description")
             logger.info(f"Generate question request with description: {description}")
@@ -522,7 +547,6 @@ class GenerateQuestionView(APIView):
                 )
 
             try:
-                # Call AI service
                 ai_service_url = "http://ai-service:8001/generate_question"
                 logger.info(f"Calling AI service at {ai_service_url}")
                 response = httpx.post(

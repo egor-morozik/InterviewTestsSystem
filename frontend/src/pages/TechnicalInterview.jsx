@@ -54,7 +54,6 @@ function TechnicalInterview() {
 
     ws.onopen = () => {
       setIsConnected(true)
-      console.log('WebSocket connected')
     }
 
     ws.onmessage = (event) => {
@@ -70,6 +69,10 @@ function TechnicalInterview() {
         if (questions.length > 0) {
           setCurrentQuestionId(questions[0].id)
         }
+        // Set user role from server
+        setIsInterviewer(data.is_interviewer || false)
+      } else if (data.type === 'error') {
+        setError(data.message)
       } else if (data.type === 'code_update') {
         if (data.question_id === currentQuestionId) {
           setCode(data.code)
@@ -84,19 +87,18 @@ function TechnicalInterview() {
         setCodeOutput({
           stdout: data.stdout,
           stderr: data.stderr,
-          time: data.time
+          time: data.time,
+          status: data.status
         })
       }
     }
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
+    ws.onerror = () => {
       setError('Ошибка подключения к серверу')
     }
 
     ws.onclose = () => {
       setIsConnected(false)
-      console.log('WebSocket disconnected')
     }
   }
 
@@ -113,23 +115,23 @@ function TechnicalInterview() {
   const sendMessage = () => {
     if (!messageInput.trim() || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
 
-    const sender = isInterviewer ? 'interviewer' : 'candidate'
     wsRef.current.send(JSON.stringify({
       type: 'chat_message',
       message: messageInput,
-      sender: sender
     }))
 
     setMessageInput('')
   }
 
   const runCode = () => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    if (!isInterviewer && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'run_code',
         code: code,
         question_id: currentQuestionId
       }))
+    } else if (isInterviewer) {
+      setError('Tech Lead cannot run code - only candidate can')
     }
   }
 
@@ -150,6 +152,9 @@ function TechnicalInterview() {
             <h1 className="text-3xl font-bold text-secondary mb-2">💻 Техническое собеседование</h1>
             <p className="text-secondary-light font-medium">
               👤 Кандидат: {session.candidate_name} | 📋 Шаблон: {session.template_name}
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              {isInterviewer ? '👨‍💼 Вы: Tech Lead' : '👤 Вы: Кандидат'}
             </p>
           </div>
           <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold border-2 ${isConnected ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700'}`}>
@@ -193,17 +198,29 @@ function TechnicalInterview() {
                   <span>💻</span>
                   <span>Код</span>
                 </h3>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white bg-primary hover:opacity-90 transition-all" onClick={runCode}>
+                <button 
+                  disabled={isInterviewer}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    isInterviewer 
+                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                      : 'text-white bg-primary hover:opacity-90'
+                  }`} 
+                  onClick={runCode}
+                  title={isInterviewer ? 'Tech Lead cannot run code' : 'Run code'}
+                >
                   <span>▶</span>
                   <span>Запустить</span>
                 </button>
               </div>
               <textarea
-                className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary resize-none font-mono text-sm"
+                className={`w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary resize-none font-mono text-sm ${
+                  isInterviewer ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                }`}
                 style={{ minHeight: '350px' }}
                 value={code}
                 onChange={(e) => handleCodeChange(e.target.value)}
-                placeholder="Начните писать код на Python 3..."
+                disabled={isInterviewer}
+                placeholder={isInterviewer ? 'Tech Lead view only' : 'Начните писать код на Python 3...'}
               />
               
               {codeOutput && (

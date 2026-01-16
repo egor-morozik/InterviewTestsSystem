@@ -3,6 +3,7 @@ from django.urls import path
 from .admin_views import (
     AdminDashboardView,
     CandidateListView,
+    CandidateDetailView,
     GenerateQuestionView,
     InvitationDetailView,
     InvitationListView,
@@ -33,6 +34,7 @@ urlpatterns = [
     # Admin API
     path("admin/dashboard/", AdminDashboardView.as_view(), name="admin_dashboard"),
     path("admin/candidates/", CandidateListView.as_view(), name="admin_candidates"),
+    path("admin/candidates/<int:pk>/", CandidateDetailView.as_view(), name="admin_candidate_detail"),
     path("admin/invitations/", InvitationListView.as_view(), name="admin_invitations"),
     path(
         "admin/invitations/<int:pk>/",

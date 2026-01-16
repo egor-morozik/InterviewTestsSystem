@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getCandidates, createCandidate } from '../api/adminApi'
 
 function CreateInvitationModal({ templates, candidates: existingCandidates, techLeads, onClose, onSubmit }) {
-  const [step, setStep] = useState(1) // 1 - выбор/создание кандидата, 2 - выбор теста и типа
+  const [step, setStep] = useState(1)
   const [selectedCandidateId, setSelectedCandidateId] = useState('')
   const [newCandidate, setNewCandidate] = useState({ email: '', full_name: '' })
   const [createNewCandidate, setCreateNewCandidate] = useState(false)
@@ -93,10 +93,10 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-1000 p-5">
+    <div className="fixed inset-0 flex items-center justify-center p-5 bg-black/50 z-1000">
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-secondary m-0">➕ Создать приглашение</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="m-0 text-2xl font-bold text-secondary">➕ Создать приглашение</h2>
           <button
             className="px-3 py-1 text-xl text-secondary-light hover:text-secondary"
             onClick={onClose}
@@ -105,7 +105,6 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
           </button>
         </div>
 
-        {/* Индикатор шагов */}
         <div className="flex gap-2 mb-6">
           <div className={`flex-1 px-4 py-2 rounded text-xs font-semibold text-center text-white ${step >= 1 ? 'bg-primary' : 'bg-border text-secondary-light'}`}>
             Шаг 1: Кандидат
@@ -115,13 +114,12 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
           </div>
         </div>
 
-        {error && <div className="p-4 mb-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
+        {error && <div className="p-4 mb-4 text-red-700 bg-red-100 border border-red-400 rounded">{error}</div>}
 
-        {/* Шаг 1: Выбор кандидата */}
         {step === 1 && (
           <div>
             <div className="mb-6">
-              <label className="block text-secondary font-medium mb-4">Выберите способ:</label>
+              <label className="block mb-4 font-medium text-secondary">Выберите способ:</label>
               <div className="flex gap-3 mb-4">
                 <button
                   className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${!createNewCandidate ? 'bg-primary text-white' : 'bg-border text-secondary-light hover:bg-gray-100'}`}
@@ -146,9 +144,9 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
 
             {!createNewCandidate ? (
               <div className="mb-6">
-                <label className="block text-secondary font-medium mb-2">Кандидат:</label>
+                <label className="block mb-2 font-medium text-secondary">Кандидат:</label>
                 <select
-                  className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-3 bg-white border rounded-lg border-border text-secondary focus:outline-none focus:border-primary"
                   value={selectedCandidateId}
                   onChange={(e) => {
                     setSelectedCandidateId(e.target.value)
@@ -166,20 +164,20 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
             ) : (
               <div>
                 <div className="mb-6">
-                  <label className="block text-secondary font-medium mb-2">Email кандидата:</label>
+                  <label className="block mb-2 font-medium text-secondary">Email кандидата:</label>
                   <input
                     type="email"
-                    className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
+                    className="w-full px-4 py-3 bg-white border rounded-lg border-border text-secondary focus:outline-none focus:border-primary"
                     value={newCandidate.email}
                     onChange={(e) => setNewCandidate({ ...newCandidate, email: e.target.value })}
                     placeholder="example@email.com"
                   />
                 </div>
                 <div className="mb-6">
-                  <label className="block text-secondary font-medium mb-2">ФИО кандидата:</label>
+                  <label className="block mb-2 font-medium text-secondary">ФИО кандидата:</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
+                    className="w-full px-4 py-3 bg-white border rounded-lg border-border text-secondary focus:outline-none focus:border-primary"
                     value={newCandidate.full_name}
                     onChange={(e) => setNewCandidate({ ...newCandidate, full_name: e.target.value })}
                     placeholder="Иванов Иван Иванович"
@@ -190,13 +188,12 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
           </div>
         )}
 
-        {/* Шаг 2: Выбор теста */}
         {step === 2 && (
           <div>
             <div className="mb-6">
-              <label className="block text-secondary font-medium mb-2">Шаблон теста:</label>
+              <label className="block mb-2 font-medium text-secondary">Шаблон теста:</label>
               <select
-                className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
+                className="w-full px-4 py-3 bg-white border rounded-lg border-border text-secondary focus:outline-none focus:border-primary"
                 value={selectedTemplateId}
                 onChange={(e) => {
                   setSelectedTemplateId(e.target.value)
@@ -213,7 +210,7 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
             </div>
 
             <div className="mb-6">
-              <label className="block text-secondary font-medium mb-4">Тип собеседования:</label>
+              <label className="block mb-4 font-medium text-secondary">Тип собеседования:</label>
               <div className="flex gap-3">
                 <button
                   className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${selectedInterviewType === 'general' ? 'bg-primary text-white' : 'bg-border text-secondary-light hover:bg-gray-100'}`}
@@ -235,9 +232,9 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
 
             {selectedInterviewType === 'technical' && (
               <div className="mb-6">
-                <label className="block text-secondary font-medium mb-2">Назначить Tech Lead (необязательно):</label>
+                <label className="block mb-2 font-medium text-secondary">Назначить Tech Lead (необязательно):</label>
                 <select
-                  className="w-full px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-3 bg-white border rounded-lg border-border text-secondary focus:outline-none focus:border-primary"
                   value={selectedTechLeadId}
                   onChange={(e) => setSelectedTechLeadId(e.target.value)}
                 >
@@ -253,7 +250,6 @@ function CreateInvitationModal({ templates, candidates: existingCandidates, tech
           </div>
         )}
 
-        {/* Кнопки */}
         <div className="flex gap-3 mt-8">
           <button
             className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all border border-border text-secondary-light hover:bg-gray-50 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
