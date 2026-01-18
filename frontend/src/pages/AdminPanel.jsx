@@ -602,11 +602,18 @@ export default function AdminPanel({ initialTab = null }) {
                     {paginate(questions, 'questions').map(q => (
                       <div key={q.id} className="p-3 bg-white border rounded">
                         <div className="flex items-start justify-between">
-                          <div>
-                            <div className="font-semibold">{q.text.slice(0,150)}{q.text.length>150?'...':''}</div>
-                            <div className="text-sm text-gray-600">{q.question_type} • {q.complexity}</div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-base">{q.text.slice(0,150)}{q.text.length>150?'...':''}</div>
+                            <div className="text-sm text-gray-600 mt-1">Type: {q.question_type} • Complexity: {q.complexity}</div>
+                            {q.tags && q.tags.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {q.tags.map(tag => (
+                                  <span key={tag.id} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">{tag.name}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                          <div style={{ display:'flex', flexDirection:'column', gap:8, marginLeft: 12 }}>
                             <button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>setEditQuestion(q)}>Edit</button>
                             <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={()=>handleDeleteQuestion(q.id)}>Delete</button>
                           </div>
