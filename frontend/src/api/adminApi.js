@@ -160,13 +160,15 @@ export const createTestTemplate = async(data) => {
 
 export const updateTestTemplate = async(id, data) => {
     await getCsrfToken()
-    const response = await axios.patch(`${API_BASE}/admin/templates/${id}/`, data)
+        // template detail routes are exposed under `/templates/<id>/` (non-admin)
+    const response = await axios.patch(`${API_BASE}/templates/${id}/`, data)
     return response.data
 }
 
 export const deleteTestTemplate = async(id) => {
     await getCsrfToken()
-    const response = await axios.delete(`${API_BASE}/admin/templates/${id}/`)
+        // delete uses the public template detail route
+    const response = await axios.delete(`${API_BASE}/templates/${id}/`)
     return response.data
 }
 

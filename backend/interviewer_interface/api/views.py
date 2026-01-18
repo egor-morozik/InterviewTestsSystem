@@ -6,6 +6,7 @@ from ..models import TestTemplate
 from .serializers import TestTemplateSerializer
 
 from django.contrib.auth import authenticate, login
+from django.db.models.deletion import ProtectedError
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
@@ -26,6 +27,59 @@ class TestTemplateDetailView(APIView):
         template = TestTemplate.objects.get(pk=pk)
         serializer = TestTemplateSerializer(template)
         return Response(serializer.data)
+
+    def patch(self, request, pk):
+        try:
+            template = TestTemplate.objects.get(pk=pk)
+        except TestTemplate.DoesNotExist:
+            return Response({"error": "Template not found"}, status=404)
+
+        # Update basic fields
+        if 'name' in request.data:
+            template.name = request.data.get('name')
+        if 'description' in request.data:
+            template.description = request.data.get('description')
+        if 'time_limit' in request.data:
+            try:
+                template.time_limit = int(request.data.get('time_limit') or 0)
+            except (ValueError, TypeError):
+                template.time_limit = 0
+
+        # If questions provided, replace existing ordering
+        if 'questions' in request.data:
+            questions = request.data.get('questions') or []
+            # through model for the many-to-many relation with order
+            TestTemplateQuestion = TestTemplate._meta.get_field('questions').remote_field.through
+            # remove existing relations
+            TestTemplateQuestion.objects.filter(template=template).delete()
+            order = 0
+            for item in questions:
+                if isinstance(item, dict):
+                    qid = item.get('question_id') or item.get('id')
+                    order = item.get('order', order)
+                else:
+                    qid = item
+                try:
+                    q = Question.objects.get(id=qid)
+                    TestTemplateQuestion.objects.create(template=template, question=q, order=order)
+                except Question.DoesNotExist:
+                    continue
+                order += 1
+
+        template.save()
+        serializer = TestTemplateSerializer(template)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        try:
+            template = TestTemplate.objects.get(pk=pk)
+        except TestTemplate.DoesNotExist:
+            return Response({"error": "Template not found"}, status=404)
+        try:
+            template.delete()
+            return Response(status=204)
+        except ProtectedError:
+            return Response({"error": "Cannot delete template because it is used by invitations"}, status=400)
 
 
 class LoginView(APIView):
@@ -64,26 +118,4 @@ class CurrentUserView(APIView):
             "is_tech_lead": getattr(user, "is_tech_lead", False),
             "is_staff": user.is_staff,
         })
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from ..models import TestTemplate
-from .serializers import TestTemplateSerializer
-
-
-class TestTemplateListView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
-
-    def get(self, request):
-        templates = TestTemplate.objects.all()
-        serializer = TestTemplateSerializer(templates, many=True)
-        return Response(serializer.data)
-
-
-class TestTemplateDetailView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
-
-    def get(self, request, pk):
-        template = TestTemplate.objects.get(pk=pk)
-        serializer = TestTemplateSerializer(template)
-        return Response(serializer.data)

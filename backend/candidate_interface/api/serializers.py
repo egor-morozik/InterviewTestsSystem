@@ -8,7 +8,11 @@ from ..models import Answer, Invitation
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ("id", "text", "is_correct")
+        fields = (
+            "id", 
+            "text", 
+            "is_correct",
+            )
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -16,19 +20,35 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ("id", "text", "question_type", "complexity", "choices", "stdin")
+        fields = ("id", 
+                  "text", 
+                  "question_type", 
+                  "complexity", 
+                  "choices", 
+                  "stdin",
+                  )
 
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
-        fields = ("question", "response", "score")
+        fields = (
+            "question", 
+            "response", 
+            "score",
+            )
 
 
 class TestSessionSerializer(serializers.ModelSerializer):
     questions = serializers.SerializerMethodField()
-    candidate_name = serializers.CharField(source="candidate.full_name", read_only=True)
-    template_name = serializers.CharField(source="test_template.name", read_only=True)
+    candidate_name = serializers.CharField(
+        source="candidate.full_name", 
+        read_only=True,
+        )
+    template_name = serializers.CharField(
+        source="test_template.name", 
+        read_only=True,
+        )
     remaining_time = serializers.SerializerMethodField()
 
     class Meta:
@@ -71,12 +91,26 @@ class TestSessionSerializer(serializers.ModelSerializer):
 
 
 class QuestionDetailSerializer(serializers.Serializer):
-    question = QuestionSerializer(read_only=True)
-    current_answer = AnswerSerializer(required=False, allow_null=True, read_only=True)
-    is_first = serializers.BooleanField(read_only=True)
-    is_last = serializers.BooleanField(read_only=True)
-    current_index = serializers.IntegerField(read_only=True)
-    total_questions = serializers.IntegerField(read_only=True)
+    question = QuestionSerializer(
+        read_only=True
+        )
+    current_answer = AnswerSerializer(
+        required=False, 
+        allow_null=True, 
+        read_only=True,
+        )
+    is_first = serializers.BooleanField(
+        read_only=True,
+        )
+    is_last = serializers.BooleanField(
+        read_only=True,
+        )
+    current_index = serializers.IntegerField(
+        read_only=True,
+        )
+    total_questions = serializers.IntegerField(
+        read_only=True,
+        )
 
     def to_representation(self, instance):
         return {
@@ -85,7 +119,7 @@ class QuestionDetailSerializer(serializers.Serializer):
                 AnswerSerializer(instance["current_answer"]).data
                 if instance.get("current_answer")
                 else None
-            ),
+                ),
             "is_first": instance["is_first"],
             "is_last": instance["is_last"],
             "current_index": instance["current_index"],
@@ -95,8 +129,14 @@ class QuestionDetailSerializer(serializers.Serializer):
 
 class InvitationSerializer(serializers.ModelSerializer):
     questions = serializers.SerializerMethodField()
-    candidate_name = serializers.CharField(source="candidate.full_name", read_only=True)
-    template_name = serializers.CharField(source="test_template.name", read_only=True)
+    candidate_name = serializers.CharField(
+        source="candidate.full_name", 
+        read_only=True,
+        )
+    template_name = serializers.CharField(
+        source="test_template.name", 
+        read_only=True,
+        )
 
     class Meta:
         model = Invitation

@@ -141,19 +141,19 @@ function TechnicalInterview() {
   }
 
   if (loading) return <div className="flex items-center justify-center min-h-screen text-secondary">Загрузка...</div>
-  if (error) return <div className="flex items-center justify-center min-h-screen bg-red-100 border border-red-400 text-red-700 rounded p-4">{error}</div>
+  if (error) return <div className="flex items-center justify-center min-h-screen p-4 text-red-700 bg-red-100 border border-red-400 rounded">{error}</div>
   if (!session) return null
 
   return (
-    <div className="min-h-screen bg-background fade-in p-6">
-      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-card p-8">
-        <div className="flex justify-between items-start mb-8 pb-6 border-b border-border">
+    <div className="min-h-screen p-6 bg-background fade-in">
+      <div className="p-8 mx-auto bg-white rounded-lg max-w-7xl shadow-card">
+        <div className="flex items-start justify-between pb-6 mb-8 border-b border-border">
           <div>
-            <h1 className="text-3xl font-bold text-secondary mb-2">💻 Техническое собеседование</h1>
-            <p className="text-secondary-light font-medium">
+            <h1 className="mb-2 text-3xl font-bold text-secondary">💻 Техническое собеседование</h1>
+            <p className="font-medium text-secondary-light">
               👤 Кандидат: {session.candidate_name} | 📋 Шаблон: {session.template_name}
             </p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="mt-2 text-sm text-gray-500">
               {isInterviewer ? '👨‍💼 Вы: Tech Lead' : '👤 Вы: Кандидат'}
             </p>
           </div>
@@ -165,12 +165,12 @@ function TechnicalInterview() {
 
         <div className="grid grid-cols-2 gap-6 mt-6">
           <div>
-            <div className="bg-white rounded-lg shadow-card p-6 mb-6 border border-border">
+            <div className="p-6 mb-6 bg-white border rounded-lg shadow-card border-border">
               <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-secondary">
                 <span>📝</span>
                 <span>Вопросы</span>
               </h3>
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
+              <div className="pr-2 space-y-2 overflow-y-auto max-h-56">
                 {session.questions?.map((q, idx) => (
                   <div
                     key={q.id || idx}
@@ -184,7 +184,7 @@ function TechnicalInterview() {
                     <strong className={currentQuestionId === q.id ? 'text-primary' : 'text-secondary'}>
                       Вопрос {idx + 1}
                     </strong>
-                    <p className="text-sm text-secondary-light mt-1 line-clamp-2">
+                    <p className="mt-1 text-sm text-secondary-light line-clamp-2">
                       {(q.text || '').substring(0, 60)}{(q.text || '').length > 60 ? '...' : ''}
                     </p>
                   </div>
@@ -192,8 +192,8 @@ function TechnicalInterview() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-card p-6 border border-border">
-              <div className="flex justify-between items-center mb-4">
+            <div className="p-6 bg-white border rounded-lg shadow-card border-border">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="flex items-center gap-2 text-lg font-bold text-secondary">
                   <span>💻</span>
                   <span>Код</span>
@@ -226,16 +226,16 @@ function TechnicalInterview() {
               {codeOutput && (
                 <div className="mt-4">
                   {codeOutput.stderr ? (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <strong className="text-red-700 text-sm">❌ Ошибка:</strong>
-                      <pre className="text-xs text-red-600 mt-3 font-mono overflow-x-auto leading-relaxed">{codeOutput.stderr}</pre>
+                    <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                      <strong className="text-sm text-red-700">❌ Ошибка:</strong>
+                      <pre className="mt-3 overflow-x-auto font-mono text-xs leading-relaxed text-red-600">{codeOutput.stderr}</pre>
                     </div>
                   ) : (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <strong className="text-green-700 text-sm">✅ Вывод:</strong>
-                      <pre className="text-xs text-green-600 mt-3 font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap">{codeOutput.stdout || '(пусто)'}</pre>
+                    <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                      <strong className="text-sm text-green-700">✅ Вывод:</strong>
+                      <pre className="mt-3 overflow-x-auto font-mono text-xs leading-relaxed text-green-600 whitespace-pre-wrap">{codeOutput.stdout || '(пусто)'}</pre>
                       {codeOutput.time && (
-                        <p className="text-green-600 text-xs mt-3 font-semibold">
+                        <p className="mt-3 text-xs font-semibold text-green-600">
                           ⏱ Время выполнения: {codeOutput.time}
                         </p>
                       )}
@@ -247,16 +247,16 @@ function TechnicalInterview() {
           </div>
 
           <div>
-            <div className="bg-white rounded-lg shadow-card p-6 border border-border flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
-              <h3 className="flex items-center gap-2 text-lg font-bold text-secondary mb-4">
+            <div className="flex flex-col p-6 bg-white border rounded-lg shadow-card border-border" style={{ height: 'calc(100vh - 200px)' }}>
+              <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-secondary">
                 <span>💬</span>
                 <span>Чат</span>
               </h3>
-              <div className="flex-1 overflow-y-auto mb-4 p-4 bg-white rounded-lg border-2 border-border min-h-96">
+              <div className="flex-1 p-4 mb-4 overflow-y-auto bg-white border-2 rounded-lg border-border min-h-96">
                 {messages.length === 0 ? (
-                  <div className="text-center mt-20 opacity-60">
-                    <div className="text-4xl mb-4">💬</div>
-                    <p className="text-secondary font-medium">
+                  <div className="mt-20 text-center opacity-60">
+                    <div className="mb-4 text-4xl">💬</div>
+                    <p className="font-medium text-secondary">
                       Нет сообщений. Начните общение!
                     </p>
                   </div>
@@ -270,7 +270,7 @@ function TechnicalInterview() {
                           : 'bg-gray-100 text-secondary mr-6'
                       }`}
                     >
-                      <div className="text-xs font-semibold mb-1 opacity-75">
+                      <div className="mb-1 text-xs font-semibold opacity-75">
                         {msg.sender === 'interviewer' ? '👨‍💼 Tech Lead' : '👤 Кандидат'}
                       </div>
                       <div className="text-sm leading-relaxed">{msg.message}</div>
@@ -280,14 +280,14 @@ function TechnicalInterview() {
               </div>
               <div className="flex gap-2">
                 <input
-                  className="flex-1 px-4 py-3 border border-border rounded-lg text-secondary bg-white focus:outline-none focus:border-primary"
+                  className="flex-1 px-4 py-3 bg-white border rounded-lg border-border text-secondary focus:outline-none focus:border-primary"
                   type="text"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   placeholder="Введите сообщение..."
                 />
-                <button className="flex items-center gap-2 px-4 py-3 rounded-lg font-medium text-white bg-primary hover:opacity-90 transition-all" onClick={sendMessage}>
+                <button className="flex items-center gap-2 px-4 py-3 font-medium text-white transition-all rounded-lg bg-primary hover:opacity-90" onClick={sendMessage}>
                   <span>📤</span>
                   <span>Отправить</span>
                 </button>

@@ -343,3 +343,4 @@ class QuestionFeedbackView(APIView):
             'score': feedback.score,
             'comment': feedback.comment,
         })
+    

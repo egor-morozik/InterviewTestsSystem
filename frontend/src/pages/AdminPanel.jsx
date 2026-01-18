@@ -91,7 +91,7 @@ function CreateUserForm({ onCreate, roles }) {
       />
 
       <div>
-        <div className="text-sm font-medium mb-2">Role</div>
+        <div className="mb-2 text-sm font-medium">Role</div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setRoleSelected('hr')}
             className={`px-3 py-1 rounded ${roleSelected==='hr' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
@@ -104,7 +104,7 @@ function CreateUserForm({ onCreate, roles }) {
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
       <button type="submit" className="btn" disabled={loading}>
         {loading ? 'Creating...' : 'Create User'}
       </button>
@@ -255,7 +255,7 @@ export default function AdminPanel({ initialTab = null }) {
   const handleDeleteInvitation = async (id) => {
     if (!confirm('Delete invitation?')) return
     await deleteInvitation(id)
-    setInvitations(invitations.filter(i => i.id !== id))
+    setInvitations(prev => prev.filter(i => i.id !== id))
   }
 
   const handleCreateQuestion = async (data) => {
@@ -283,13 +283,13 @@ export default function AdminPanel({ initialTab = null }) {
   const handleDeleteTemplate = async (id) => {
     if (!confirm('Delete template?')) return
     await deleteTestTemplate(id)
-    setTemplates(templates.filter(t => t.id !== id))
+    setTemplates(prev => prev.filter(t => t.id !== id))
   }
 
   const handleDeleteQuestion = async (id) => {
     if (!confirm('Delete question?')) return
     await deleteQuestion(id)
-    setQuestions(questions.filter(q => q.id !== id))
+    setQuestions(prev => prev.filter(q => q.id !== id))
   }
 
   const handleCreateCandidate = async (data) => {
@@ -307,8 +307,7 @@ export default function AdminPanel({ initialTab = null }) {
   const handleDeleteCandidate = async (id) => {
     if (!confirm('Delete candidate?')) return
     await deleteCandidate(id)
-    const list = await getCandidates()
-    setCandidates(list)
+    setCandidates(prev => prev.filter(c => c.id !== id))
   }
 
   const handleSaveUser = async (id, updated) => {
@@ -457,8 +456,8 @@ export default function AdminPanel({ initialTab = null }) {
                           <td className="p-2">{u.email}</td>
                           <td className="p-2 text-center">{u.is_hr ? 'HR' : u.is_tech_lead ? 'TechLead' : '—'}</td>
                           <td className="p-2 text-center">
-                            <button className="px-2 py-1 text-white rounded bg-primary mr-2" onClick={() => setEditUser(u)}>Edit</button>
-                            <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={async () => { if (confirm('Delete this account?')) { await deleteUser(u.id); const list = await getUsers(); setUsers(list.filter(x => x.is_hr || x.is_tech_lead)) } }}>Delete</button>
+                            <button className="px-2 py-1 mr-2 text-white rounded bg-primary" onClick={() => setEditUser(u)}>Edit</button>
+                            <button className="px-2 py-1 text-white bg-red-600 rounded" onClick={async () => { if (!confirm('Delete this account?')) return; await deleteUser(u.id); setUsers(prev => prev.filter(x => x.id !== u.id)); }}>Delete</button>
                           </td>
                         </tr>
                       ))}
@@ -639,41 +638,41 @@ export default function AdminPanel({ initialTab = null }) {
         )}
 
         {editTemplate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl max-h-96 overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="max-w-2xl p-6 overflow-y-auto bg-white rounded-lg shadow-lg max-h-96">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Edit Template</h2>
                 <button onClick={() => setEditTemplate(null)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
               <CreateTemplateForm questions={questions} onCreate={handleCreateTemplate} initial={editTemplate} />
-              <button onClick={() => setEditTemplate(null)} className="mt-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Close</button>
+              <button onClick={() => setEditTemplate(null)} className="px-4 py-2 mt-4 bg-gray-300 rounded hover:bg-gray-400">Close</button>
             </div>
           </div>
         )}
 
         {editQuestion && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl max-h-96 overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="max-w-2xl p-6 overflow-y-auto bg-white rounded-lg shadow-lg max-h-96">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Edit Question</h2>
                 <button onClick={() => setEditQuestion(null)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
               <CreateQuestionForm tags={tags} onCreate={handleCreateQuestion} initial={editQuestion} />
-              <button onClick={() => setEditQuestion(null)} className="mt-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Close</button>
+              <button onClick={() => setEditQuestion(null)} className="px-4 py-2 mt-4 bg-gray-300 rounded hover:bg-gray-400">Close</button>
             </div>
           </div>
         )}
 
         {editCandidate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="max-w-lg p-6 bg-white rounded-lg shadow-lg">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Edit Candidate</h2>
                 <button onClick={() => setEditCandidate(null)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
+                  <label className="block mb-1 text-sm font-medium">Full Name</label>
                   <input 
                     type="text" 
                     defaultValue={editCandidate.full_name}
@@ -682,7 +681,7 @@ export default function AdminPanel({ initialTab = null }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <label className="block mb-1 text-sm font-medium">Email</label>
                   <input 
                     type="email" 
                     defaultValue={editCandidate.email}
@@ -691,7 +690,7 @@ export default function AdminPanel({ initialTab = null }) {
                   />
                 </div>
               </div>
-              <div className="mt-6 flex gap-3">
+              <div className="flex gap-3 mt-6">
                 <button 
                   onClick={async () => {
                     const name = document.getElementById('edit-candidate-name').value
@@ -703,7 +702,7 @@ export default function AdminPanel({ initialTab = null }) {
                       setEditCandidate(null)
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-primary text-white rounded hover:opacity-90"
+                  className="flex-1 px-4 py-2 text-white rounded bg-primary hover:opacity-90"
                 >
                   Save
                 </button>
@@ -714,15 +713,15 @@ export default function AdminPanel({ initialTab = null }) {
         )}
 
         {editUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg max-h-96 overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="max-w-lg p-6 overflow-y-auto bg-white rounded-lg shadow-lg max-h-96">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Edit User Account</h2>
                 <button onClick={() => setEditUser(null)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Username</label>
+                  <label className="block mb-1 text-sm font-medium">Username</label>
                   <input 
                     type="text" 
                     defaultValue={editUser.username}
@@ -731,7 +730,7 @@ export default function AdminPanel({ initialTab = null }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <label className="block mb-1 text-sm font-medium">Email</label>
                   <input 
                     type="email" 
                     defaultValue={editUser.email}
@@ -740,7 +739,7 @@ export default function AdminPanel({ initialTab = null }) {
                   />
                 </div>
                 <div>
-                  <div className="text-sm font-medium mb-2">Role</div>
+                  <div className="mb-2 text-sm font-medium">Role</div>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setEditUserRole('hr')}
                       className={`px-3 py-1 rounded ${editUserRole==='hr' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
@@ -769,7 +768,7 @@ export default function AdminPanel({ initialTab = null }) {
                   </>
                 )}
               </div>
-              <div className="mt-6 flex gap-3">
+              <div className="flex gap-3 mt-6">
                 <button 
                   onClick={async () => {
                     const username = document.getElementById('edit-user-username').value
@@ -791,7 +790,7 @@ export default function AdminPanel({ initialTab = null }) {
                     await handleSaveUser(editUser.id, updated)
                     setEditUser(null)
                   }}
-                  className="flex-1 px-4 py-2 bg-primary text-white rounded hover:opacity-90"
+                  className="flex-1 px-4 py-2 text-white rounded bg-primary hover:opacity-90"
                 >
                   Save
                 </button>
@@ -1153,7 +1152,7 @@ function ResultsListView({ results, loading, onSelectResult }) {
     <div>
       <h2 className="mb-4 text-lg font-semibold">Test Results</h2>
       
-      <div className="mb-6 grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-5 gap-3 mb-6">
         <input
           type="text"
           placeholder="Filter by candidate name..."
@@ -1222,7 +1221,7 @@ function ResultsListView({ results, loading, onSelectResult }) {
                 <td className="p-2">{r.test_template}</td>
                 <td className="p-2 text-center">{r.interview_type && r.interview_type.includes('Tech')? 'Technical' : 'General'}</td>
                 <td className="p-2 text-center">{r.tab_switches ?? 0}</td>
-                <td className="p-2 text-center font-semibold" style={{color: r.percent >= 70 ? '#16a34a' : r.percent >= 50 ? '#eab308' : '#dc2626'}}>{r.percent}%</td>
+                <td className="p-2 font-semibold text-center" style={{color: r.percent >= 70 ? '#16a34a' : r.percent >= 50 ? '#eab308' : '#dc2626'}}>{r.percent}%</td>
                 <td className="p-2 text-center">{r.auto_score}</td>
                 <td className="p-2 text-center">{r.manual_score ?? '—'}</td>
                 <td className="p-2 text-center"><button className="px-2 py-1 text-white rounded bg-primary" onClick={()=>onSelectResult(r.id)}>View</button></td>

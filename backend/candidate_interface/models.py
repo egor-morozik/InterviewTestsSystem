@@ -9,53 +9,64 @@ from interviewer_interface.models import Question, TestTemplate
 
 
 class Candidate(models.Model):
+    """
+    Модель кандидата
+    """
+
     email = models.EmailField(
         unique=True,
         verbose_name="Email кандидата",
-    )
+        )
     full_name = models.CharField(
         max_length=255,
         verbose_name="ФИО",
-    )
+        )
 
     def __str__(self):
         return f"{self.full_name}"
 
 
 class Invitation(models.Model):
+    """
+    Модель приглашения на тест/интервью
+    """
+
     candidate = models.ForeignKey(
         Candidate,
         on_delete=models.CASCADE,
         related_name="invitations",
         verbose_name="Кандидат",
-    )
+        )
     test_template = models.ForeignKey(
         TestTemplate,
         on_delete=models.PROTECT,
         related_name="invitations",
         verbose_name="Шаблон теста",
-    )
+        )
     unique_link = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
         verbose_name="Уникальная ссылка",
-    )
-    sent = models.BooleanField(default=False, verbose_name="Ссылка отправлена")
+        )
+    sent = models.BooleanField(
+        default=False, 
+        verbose_name="Ссылка отправлена",
+        )
     completed = models.BooleanField(
         default=False,
         verbose_name="Пройден",
-    )
+        )
     INTERVIEW_TYPES = (
         ("general", "Общий тест (HR)"),
         ("technical", "Техническое собеседование (Tech Lead)"),
-    )
+        )
     interview_type = models.CharField(
         max_length=20,
         choices=INTERVIEW_TYPES,
         default="general",
         verbose_name="Тип собеседования",
-    )
+        )
     assigned_tech_lead = models.ForeignKey(
         "interviewer_interface.InterviewerUser",
         null=True,
@@ -63,13 +74,16 @@ class Invitation(models.Model):
         on_delete=models.SET_NULL,
         limit_choices_to={"is_tech_lead": True},
         verbose_name="Назначенный Tech Lead",
-    )
+        )
     tech_comments = models.TextField(
-        blank=True, verbose_name="Итоговый комментарий Tech Lead"
-    )
+        blank=True, 
+        verbose_name="Итоговый комментарий Tech Lead",
+        )
     tech_total_score = models.IntegerField(
-        null=True, blank=True, verbose_name="Итоговый балл от Tech Lead"
-    )
+        null=True, 
+        blank=True, 
+        verbose_name="Итоговый балл от Tech Lead",
+        )
 
     def __str__(self):
         return f"Приглашение для {self.candidate.email}-{self.test_template.name}"
@@ -80,36 +94,63 @@ class Invitation(models.Model):
                 "can_assign_interview",
                 "can assign hr/tech interview",
             ),
-        ]
+            ]
 
 
 class QuestionFeedback(models.Model):
+    """
+    Оценка ответа на вопрос 
+    """
+
     invitation = models.ForeignKey(
-        Invitation, on_delete=models.CASCADE, related_name="feedbacks"
-    )
+        Invitation, 
+        on_delete=models.CASCADE, 
+        related_name="feedbacks",
+        )
     question = models.ForeignKey(
-        "interviewer_interface.Question", on_delete=models.CASCADE
-    )
-    comment = models.TextField(blank=True, verbose_name="Комментарий по вопросу")
-    score = models.IntegerField(null=True, blank=True, verbose_name="Баллы за вопрос")
+        "interviewer_interface.Question", 
+        on_delete=models.CASCADE,
+        )
+    comment = models.TextField(
+        blank=True, 
+        verbose_name="Комментарий по вопросу"
+        )
+    score = models.IntegerField(
+        null=True, 
+        blank=True, 
+        verbose_name="Баллы за вопрос",
+        )
 
     class Meta:
-        unique_together = ("invitation", "question")
+        unique_together = (
+            "invitation", 
+            "question",
+            )
 
 
 class TabSwitchLog(models.Model):
+    """
+    Слежка за уходом пользователя со страницы тестов
+    """
+
     invitation = models.ForeignKey(
         Invitation,
         on_delete=models.CASCADE,
         related_name="tab_switches",
         verbose_name="Приглашение",
-    )
+        )
     event_type = models.CharField(
         max_length=10,
-        choices=(("hidden", "Ушёл"), ("visible", "Вернулся")),
+        choices=(
+            ("hidden", "Ушёл"), 
+            ("visible", "Вернулся")
+            ),
         verbose_name="Тип события",
-    )
-    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Время события")
+        )
+    timestamp = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name="Время события",
+        )
 
     class Meta:
         ordering = ["timestamp"]
@@ -120,24 +161,28 @@ class TabSwitchLog(models.Model):
 
 
 class Answer(models.Model):
+    """
+    Ответ на вопрос кандидатом
+    """
+
     invitation = models.ForeignKey(
         Invitation,
         on_delete=models.CASCADE,
         related_name="answers",
         verbose_name="Приглашение",
-    )
+        )
     question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
         verbose_name="Вопрос",
-    )
+        )
     response = models.TextField(
         verbose_name="Ответ кандидата",
-    )
+        )
     score = models.IntegerField(
         default=0,
         verbose_name="Баллы (автооценка)",
-    )
+        )
 
     def auto_evaluate(self):
         if not self.question.correct_answer:
@@ -212,33 +257,36 @@ class Answer(models.Model):
 
 
 class ManualGrade(models.Model):
-    """Ручная оценка кандидата для теста"""
+    """
+    Ручная оценка кандидата для теста
+    """
+
     invitation = models.OneToOneField(
         Invitation,
         on_delete=models.CASCADE,
         related_name="manual_grade",
         verbose_name="Приглашение",
-    )
+        )
     score = models.IntegerField(
         default=0,
         help_text="Общий балл (0-100)",
         verbose_name="Ручной балл",
-    )
+        )
     comment = models.TextField(
         blank=True,
         verbose_name="Комментарий оценивающего",
-    )
+        )
     graded_by = models.ForeignKey(
         "interviewer_interface.InterviewerUser",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         verbose_name="Оценил",
-    )
+        )
     graded_at = models.DateTimeField(
         auto_now=True,
         verbose_name="Время оценки",
-    )
+        )
 
     def __str__(self):
         return f"Ручная оценка {self.invitation.candidate.full_name} - {self.score}"

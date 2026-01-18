@@ -11,6 +11,7 @@ from candidate_interface.models import Candidate, Invitation
 from interviewer_interface.models import InterviewerUser, TestTemplate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from django.db.models.deletion import ProtectedError
 
 from ..models import Choice, Question, Tag, TestTemplate
 from .serializers import (
@@ -121,6 +122,17 @@ class CandidateDetailView(APIView):
             "full_name": c.full_name,
             "invitations": inv_data,
         })
+
+    def delete(self, request, pk):
+        try:
+            c = Candidate.objects.get(id=pk)
+        except Candidate.DoesNotExist:
+            return Response({"error": "Candidate not found"}, status=404)
+        try:
+            c.delete()
+            return Response(status=204)
+        except ProtectedError:
+            return Response({"error": "Cannot delete candidate because related objects are protected"}, status=400)
 
 
 class InvitationListView(APIView):
@@ -328,6 +340,16 @@ class InvitationDetailView(APIView):
                 ),
             }
         )
+
+    def delete(self, request, pk):
+        try:
+            invitation = Invitation.objects.get(id=pk)
+        except Invitation.DoesNotExist:
+            return Response(
+                {"error": "Приглашение не найдено"}, status=status.HTTP_404_NOT_FOUND
+            )
+        invitation.delete()
+        return Response(status=204)
 
 
 class TechLeadListView(APIView):
