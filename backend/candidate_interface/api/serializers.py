@@ -16,17 +16,21 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-    choices = ChoiceSerializer(many=True, read_only=True)
+    choices = ChoiceSerializer(
+        many=True, 
+        read_only=True,
+        )
 
     class Meta:
         model = Question
-        fields = ("id", 
-                  "text", 
-                  "question_type", 
-                  "complexity", 
-                  "choices", 
-                  "stdin",
-                  )
+        fields = (
+            "id", 
+            "text", 
+            "question_type", 
+            "complexity", 
+            "choices", 
+            "stdin",
+            )
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -124,7 +128,7 @@ class QuestionDetailSerializer(serializers.Serializer):
             "is_last": instance["is_last"],
             "current_index": instance["current_index"],
             "total_questions": instance["total_questions"],
-        }
+            }
 
 
 class InvitationSerializer(serializers.ModelSerializer):
@@ -149,7 +153,7 @@ class InvitationSerializer(serializers.ModelSerializer):
             "assigned_tech_lead",
             "completed",
             "questions",
-        )
+            )
 
     def get_questions(self, obj):
         ordered = obj.test_template.testtemplatequestion_set.all().order_by("order")

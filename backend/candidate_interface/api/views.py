@@ -17,6 +17,10 @@ from ..models import Answer, Invitation
 
 
 class TestSessionView(APIView):
+    """
+    Выполнение теста
+    """
+
     permission_classes = [AllowAny]
 
     def get(self, request, unique_link):
@@ -54,6 +58,10 @@ class TestSessionView(APIView):
 
 
 class QuestionDetailView(APIView):
+    """
+    Представление конкретного вопроса в наборе 
+    """
+
     permission_classes = [AllowAny]
 
     def get(self, request, unique_link, question_id):
@@ -99,6 +107,10 @@ class QuestionDetailView(APIView):
 
 
 class SubmitAnswerView(APIView):
+    """
+    Отправка ответа кандидата
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request, unique_link, question_id):
@@ -116,7 +128,6 @@ class SubmitAnswerView(APIView):
             return Response({"error": "Вопрос не найден"}, status=404)
 
         response_value = request.data.get("response", "")
-        # Normalize response to a string safely (it may be sent as a JSON array/object)
         if isinstance(response_value, str):
             response_value = response_value.strip()
         else:
@@ -143,6 +154,10 @@ class SubmitAnswerView(APIView):
 
 
 class FinishTestView(APIView):
+    """
+    Окончание теста
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request, unique_link):
@@ -165,6 +180,10 @@ class FinishTestView(APIView):
 
 
 class LogTabSwitchView(APIView):
+    """
+    Логирование переходов по вкладкам
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request, unique_link):
@@ -185,6 +204,10 @@ class LogTabSwitchView(APIView):
 
 
 class InterviewSessionView(APIView):
+    """
+    Доступ сотрудников к интервью
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, unique_link):
@@ -201,29 +224,27 @@ class InterviewSessionView(APIView):
         return Response(serializer.data)
 
 class TestResultsListView(APIView):
-    """View results of all completed tests"""
+    """
+    Вывод результатов всех завершенных тестов
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get all completed invitations (HR, staff or Tech Lead can see)
         if hasattr(request.user, 'is_hr') and request.user.is_hr:
-            # HR sees all results
             invitations = Invitation.objects.filter(completed=True).select_related(
                 'candidate', 'test_template', 'assigned_tech_lead'
             ).order_by('-id')
         elif hasattr(request.user, 'is_tech_lead') and request.user.is_tech_lead:
-            # Tech Lead sees only assigned interviews
             invitations = Invitation.objects.filter(
                 assigned_tech_lead=request.user,
                 completed=True
             ).select_related('candidate', 'test_template').order_by('-id')
         elif request.user.is_staff:
-            # Staff members can see all results
             invitations = Invitation.objects.filter(completed=True).select_related(
                 'candidate', 'test_template', 'assigned_tech_lead'
             ).order_by('-id')
         else:
-            # Other users see no results
             invitations = Invitation.objects.none()
 
         results = []
@@ -231,7 +252,6 @@ class TestResultsListView(APIView):
             answers = invitation.answers.all()
             auto_score = sum(a.score for a in answers) if answers else 0
             
-            # Get manual score from QuestionFeedback
             feedbacks = invitation.feedbacks.all()
             manual_score = sum(f.score for f in feedbacks if f.score is not None) if feedbacks else 0
             
@@ -253,7 +273,10 @@ class TestResultsListView(APIView):
 
 
 class TestResultDetailView(APIView):
-    """View detailed results of a specific candidate test"""
+    """
+    Подробное описание результатов теста кандидата
+    """
+
     permission_classes = [IsAuthenticated, IsHROrTechLead]
 
     def get(self, request, invitation_id):
@@ -262,7 +285,6 @@ class TestResultDetailView(APIView):
         except Invitation.DoesNotExist:
             return Response({"error": "Тест не найден"}, status=404)
 
-        # Check permissions - allow staff/hr users
         if not (request.user.is_staff or request.user.is_hr):
             if invitation.interview_type == 'technical':
                 if request.user != invitation.assigned_tech_lead:
@@ -309,7 +331,10 @@ class TestResultDetailView(APIView):
 
 
 class QuestionFeedbackView(APIView):
-    """Save/update manual feedback for a question"""
+    """
+    Ручная оценка ответа кандидата
+    """
+
     permission_classes = [IsAuthenticated, IsHROrTechLead]
 
     def post(self, request, invitation_id, question_id):
@@ -318,7 +343,6 @@ class QuestionFeedbackView(APIView):
         except Invitation.DoesNotExist:
             return Response({"error": "Тест не найден"}, status=404)
 
-        # Check permissions - allow staff/hr users
         if not (request.user.is_staff or request.user.is_hr):
             if invitation.interview_type == 'technical':
                 if request.user != invitation.assigned_tech_lead:

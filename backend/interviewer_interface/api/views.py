@@ -2,7 +2,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import TestTemplate
+from ..models import TestTemplate, Question
 from .serializers import TestTemplateSerializer
 
 from django.contrib.auth import authenticate, login
@@ -12,7 +12,11 @@ from rest_framework.permissions import AllowAny
 
 
 class TestTemplateListView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    """
+    Доступ к наборам вопросов
+    """
+
+    permission_classes = [AllowAny]  
 
     def get(self, request):
         templates = TestTemplate.objects.all()
@@ -21,7 +25,11 @@ class TestTemplateListView(APIView):
 
 
 class TestTemplateDetailView(APIView):
-    permission_classes = [AllowAny]  # Временно разрешаем доступ без авторизации
+    """
+    Подробное рассмотрение конкретного набора вопросов
+    """
+
+    permission_classes = [AllowAny]  
 
     def get(self, request, pk):
         template = TestTemplate.objects.get(pk=pk)
@@ -34,7 +42,6 @@ class TestTemplateDetailView(APIView):
         except TestTemplate.DoesNotExist:
             return Response({"error": "Template not found"}, status=404)
 
-        # Update basic fields
         if 'name' in request.data:
             template.name = request.data.get('name')
         if 'description' in request.data:
@@ -45,12 +52,9 @@ class TestTemplateDetailView(APIView):
             except (ValueError, TypeError):
                 template.time_limit = 0
 
-        # If questions provided, replace existing ordering
         if 'questions' in request.data:
             questions = request.data.get('questions') or []
-            # through model for the many-to-many relation with order
             TestTemplateQuestion = TestTemplate._meta.get_field('questions').remote_field.through
-            # remove existing relations
             TestTemplateQuestion.objects.filter(template=template).delete()
             order = 0
             for item in questions:
@@ -83,6 +87,10 @@ class TestTemplateDetailView(APIView):
 
 
 class LoginView(APIView):
+    """
+    Вход в аккаунт сотрудника
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -104,8 +112,11 @@ class LoginView(APIView):
         })
 
 
-# Current user endpoint
 class CurrentUserView(APIView):
+    """
+    Информация о текущем пользователе
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

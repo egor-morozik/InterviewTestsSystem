@@ -26,8 +26,10 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class QuestionCreateSerializer(serializers.ModelSerializer):
     tag_ids = serializers.ListField(
         child=serializers.IntegerField(), write_only=True, required=False
-    )
-    choices = ChoiceSerializer(many=True, write_only=True, required=False)
+        )
+    choices = ChoiceSerializer(
+        many=True, write_only=True, required=False
+        )
 
     class Meta:
         model = Question
@@ -40,7 +42,7 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
             "stdin",
             "tag_ids",
             "choices",
-        )
+            )
 
     def create(self, validated_data):
         tag_ids = validated_data.pop("tag_ids", [])
@@ -48,14 +50,15 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
         question = Question.objects.create(**validated_data)
         if tag_ids:
             question.tags.set(tag_ids)
-        # create choices if provided
         for choice in choices_data:
             Choice.objects.create(question=question, **choice)
         return question
 
 
 class TestTemplateCreateSerializer(serializers.ModelSerializer):
-    questions = serializers.ListField(child=serializers.DictField(), write_only=True)
+    questions = serializers.ListField(
+        child=serializers.DictField(), write_only=True
+        )
 
     class Meta:
         model = TestTemplate
@@ -64,7 +67,6 @@ class TestTemplateCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         questions = validated_data.pop("questions", [])
         template = TestTemplate.objects.create(**validated_data)
-        # questions: list of {"question_id": id, "order": n} or list of ids
         order = 0
         for item in questions:
             if isinstance(item, dict):
